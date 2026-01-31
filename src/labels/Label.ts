@@ -231,6 +231,9 @@ export default class Label extends Printable {
     private getFontName(font: FontOption) {
         // We don't access values directly passed in to make sure the font name we return exists
         const indexedFont = this.getIndexedFont(font)
+        if(indexedFont == null) {
+            return font.name
+        }
         return indexedFont.alias
         // return this.getFontNameForIndexed({name: font.name, weight: indexedFont.weight, style: indexedFont.style})
     }
