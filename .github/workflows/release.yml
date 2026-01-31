@@ -26,6 +26,13 @@ jobs:
               with:
                 version: 8
 
+            - name: Debug npm auth env
+              run: |
+                node -e "console.log('NODE_AUTH_TOKEN set:', !!process.env.NODE_AUTH_TOKEN)"
+                node -e "console.log('NPM_TOKEN set:', !!process.env.NPM_TOKEN)"
+                node -e "console.log('NPM_CONFIG_USERCONFIG:', process.env.NPM_CONFIG_USERCONFIG || '(default)')"
+                ls -la ~/.npmrc || true
+
             - name: Install dependencies
               run: pnpm install
 
