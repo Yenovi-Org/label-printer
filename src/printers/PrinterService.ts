@@ -12,8 +12,12 @@ export class PrinterService {
         const classes = [TSPLPrinter]
 
         for (const key in classes) {
-            if(await classes[key].try(device)) {
-                return new classes[key](device)
+            try {
+                if(await classes[key].try(device)) {
+                    return new classes[key](device)
+                }
+            } catch (_e) {
+                return undefined
             }
         }
 

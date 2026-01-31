@@ -113,7 +113,10 @@ export class UsbDevice {
      */
     async writeData(data: Uint8Array|ArrayBuffer): Promise<void> {
         const endpointNumber = this.outEndpoint
-        await this.device.transferOut(endpointNumber!, data)
+        if(endpointNumber == null) {
+            throw new Error("usb-no-out-endpoint")
+        }
+        await this.device.transferOut(endpointNumber, data as BufferSource)
     }
 
     /**
@@ -132,7 +135,10 @@ export class UsbDevice {
      */
     async readData(length: number): Promise<DataView|undefined> {
         const endpointNumber = this.inEndpoint
-        const result = await this.device.transferIn(endpointNumber!, length)
+        if(endpointNumber == null) {
+            throw new Error("usb-no-in-endpoint")
+        }
+        const result = await this.device.transferIn(endpointNumber, length)
 
         if(result.status == "ok" && result.data) {
             return result.data

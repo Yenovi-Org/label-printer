@@ -15,10 +15,10 @@ export default async (): Promise<Label> => {
     const qrX = textX
     const qrY = textY + fontSize * 2 + 20
 
-    const fontRegular = fs.readFileSync(__dirname+"/Roboto-Regular.ttf").buffer
-    const fontBold = fs.readFileSync(__dirname+"/Roboto-Bold.ttf").buffer
-    const fontItalic = fs.readFileSync(__dirname+"/Roboto-Italic.ttf").buffer
-    const fontBoldItalic = fs.readFileSync(__dirname+"/Roboto-BoldItalic.ttf").buffer
+    const fontRegular = fs.readFileSync(__dirname+"/../Roboto-Regular.ttf").buffer
+    const fontBold = fs.readFileSync(__dirname+"/../Roboto-Bold.ttf").buffer
+    const fontItalic = fs.readFileSync(__dirname+"/../Roboto-Italic.ttf").buffer
+    const fontBoldItalic = fs.readFileSync(__dirname+"/../Roboto-BoldItalic.ttf").buffer
 
     const label = new Label(50, 25)
 
