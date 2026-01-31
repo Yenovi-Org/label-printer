@@ -1,5 +1,11 @@
 # label-printer
 
+## 0.5.1
+
+### Patch Changes
+
+- d054014: Update workflow
+
 ## 0.5.0
 
 ### Minor Changes
