@@ -26,6 +26,9 @@ jobs:
               with:
                 version: 8
 
+            - name: Debug npm auth env
+              run: pnpm --version
+
             - name: Install dependencies
               run: pnpm install
 
