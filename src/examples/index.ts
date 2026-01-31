@@ -1,10 +1,10 @@
-const readline = require('node:readline').createInterface({
-    input: process.stdin,
-    output: process.stdout,
-});
+// const readline = require('node:readline').createInterface({
+//     input: process.stdin,
+//     output: process.stdout,
+// });
 
 import nodeExample from "./node"
-import browserExample from "./browser";
+// import browserExample from "./browser";
 
 nodeExample().then(() => process.exit(0))
 
