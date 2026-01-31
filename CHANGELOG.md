@@ -1,5 +1,11 @@
 # label-printer
 
+## 0.5.2
+
+### Patch Changes
+
+- 4896897: Fix deployment
+
 ## 0.5.1
 
 ### Patch Changes
