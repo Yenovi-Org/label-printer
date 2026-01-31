@@ -93,3 +93,4 @@ Sizing rules:
 - Merge feature branch into main.
 - Run `pnpm changeset version` on main to create an update with all the versions. 
 - PR is automatically created on push, merge it to trigger publish
+- Note: If there are unpublished changes on main and the release fails, it will be run again on the next push to main, no need to start again from the first step
