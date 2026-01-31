@@ -22,7 +22,7 @@
   ],
   "author": "Kemenes Krisztian",
   "license": "ISC",
-  "repository": "https://github.com/kemkriszt/raw-thermal-print.git",
+  "repository": "https://github.com/kemkriszt/label-printer",
   "devDependencies": {
     "@changesets/cli": "^2.29.4",
     "@types/fontkit": "^2.0.8",
