@@ -83,11 +83,17 @@ export default class Table extends LabelField {
     }
 
     async commandForLanguage(language: PrinterLanguage, config?: PrintConfig): Promise<Command> {
+        // Table rendering is implemented by composing existing primitives:
+        // - Text fields for cell contents
+        // - Line fields for the grid
         const generator = this.commandGeneratorFor(language)
 
         const rowCount = this.rows.length
         const colCount = Math.max(0, ...this.rows.map(r => r.length))
 
+        // Resolve column widths.
+        // If the overall table width is provided, unspecified columns share the remaining width.
+        // Otherwise, unspecified columns are measured from content.
         const resolvedColumnWidths = this.resolveTrackSizes({
             trackCount: colCount,
             explicitSizes: this.columnWidths,
@@ -95,6 +101,9 @@ export default class Table extends LabelField {
             measure: (i) => this.measureAutoColumnWidth(i, colCount, config)
         })
 
+        // Resolve row heights.
+        // If the overall table height is provided, unspecified rows share the remaining height.
+        // Otherwise, unspecified rows are measured from content and the resolved column widths.
         const resolvedRowHeights = this.resolveTrackSizes({
             trackCount: rowCount,
             explicitSizes: this.rowHeights,
@@ -102,11 +111,16 @@ export default class Table extends LabelField {
             measure: (i) => this.measureAutoRowHeight(i, resolvedColumnWidths, config)
         })
 
+        // Convert widths/heights into absolute X/Y positions.
         const xPositions = this.accumulatePositions(this.x, resolvedColumnWidths)
         const yPositions = this.accumulatePositions(this.y, resolvedRowHeights)
 
+        // We generate an internal list of LabelFields and then group their commands.
+        // This ensures we reuse the exact behavior of the existing Text and Line fields.
         const fields: LabelField[] = []
 
+        // Create a Text field for each cell.
+        // Cell text is constrained to the cell content box, which enables wrapping.
         for(let rowIndex = 0; rowIndex < rowCount; rowIndex++) {
             for(let colIndex = 0; colIndex < colCount; colIndex++) {
                 const cellContent = this.rows[rowIndex]?.[colIndex] ?? ""
@@ -115,6 +129,7 @@ export default class Table extends LabelField {
                 const cellWidth = resolvedColumnWidths[colIndex]
                 const cellHeight = resolvedRowHeights[rowIndex]
 
+                // Apply padding so text doesn't touch grid lines.
                 const textX = cellX + this.cellPadding
                 const textY = cellY + this.cellPadding
                 const textWidth = Math.max(1, cellWidth - (this.cellPadding * 2))
@@ -122,14 +137,19 @@ export default class Table extends LabelField {
 
                 const text = new Text(cellContent, textX, textY, this.formatted)
                 text.setFont(this.font)
+                // Multi-line text behavior matches the existing Text field:
+                // - wraps when width is exceeded
+                // - clips once the height constraint is reached
                 text.setMultiLine(textWidth, textHeight)
                 fields.push(text)
             }
         }
 
+        // Total table dimensions (after resolving track sizes).
         const totalWidth = resolvedColumnWidths.reduce((a, b) => a + b, 0)
         const totalHeight = resolvedRowHeights.reduce((a, b) => a + b, 0)
 
+        // Vertical grid lines (including left and right borders).
         for(let colIndex = 0; colIndex <= colCount; colIndex++) {
             const sx = colIndex == colCount ? this.x + totalWidth : xPositions[colIndex]
             fields.push(new Line(
@@ -139,6 +159,7 @@ export default class Table extends LabelField {
             ))
         }
 
+        // Horizontal grid lines (including top and bottom borders).
         for(let rowIndex = 0; rowIndex <= rowCount; rowIndex++) {
             const sy = rowIndex == rowCount ? this.y + totalHeight : yPositions[rowIndex]
             fields.push(new Line(
@@ -148,11 +169,14 @@ export default class Table extends LabelField {
             ))
         }
 
+        // Finally, generate and group all underlying commands.
         const commandList = await Promise.all(fields.map(field => field.commandForLanguage(language, config)))
         return generator.commandGroup(commandList)
     }
 
     private accumulatePositions(start: number, sizes: number[]): number[] {
+        // Converts a list of track sizes (widths/heights) into absolute positions.
+        // Returned array contains the starting coordinate for each track.
         const positions: number[] = []
         let current = start
         for(const s of sizes) {
@@ -168,6 +192,12 @@ export default class Table extends LabelField {
         total?: number,
         measure: (trackIndex: number) => number
     }): number[] {
+        if(params.trackCount == 0) return []
+        
+        // Resolves row/column sizes.
+        // - If an explicit size is provided, it is used.
+        // - If overall total is provided, any unspecified tracks share remaining space equally.
+        // - Otherwise, unspecified tracks are measured from content.
         const sizes: SizeSpec[] = new Array(params.trackCount).fill(undefined)
 
         if(params.explicitSizes) {
@@ -176,9 +206,8 @@ export default class Table extends LabelField {
             }
         }
 
-        if(params.trackCount == 0) return []
-
         if(params.total != undefined) {
+            // Fixed + flexible: distribute remaining space among tracks with undefined size.
             const fixedTotal = sizes.reduce((sum: number, s) => sum + (s ?? 0), 0)
             const flexibleCount = sizes.filter(s => s == undefined).length
 
@@ -192,6 +221,8 @@ export default class Table extends LabelField {
     }
 
     private measureAutoColumnWidth(columnIndex: number, colCount: number, config?: PrintConfig): number {
+        // Content-based width measurement for an auto-sized column.
+        // This is a heuristic: it uses single-line text width + padding.
         const contentWidths: number[] = []
 
         for(const row of this.rows) {
@@ -211,6 +242,8 @@ export default class Table extends LabelField {
     }
 
     private measureAutoRowHeight(rowIndex: number, columnWidths: number[], config?: PrintConfig): number {
+        // Content-based height measurement for an auto-sized row.
+        // We estimate how many wrapped lines are needed for each cell, then take the max.
         const row = this.rows[rowIndex] ?? []
         const contentHeights: number[] = []
 
@@ -228,6 +261,8 @@ export default class Table extends LabelField {
     }
 
     private estimateLineCount(content: string, width: number, config?: PrintConfig): number {
+        // Estimates wrapped line count using word-wrapping.
+        // This doesn't try to exactly match printer rendering; it exists to auto-size rows.
         const normalized = content.replace("\n", " ")
 
         if(normalized.trim() == "") return 1
@@ -274,6 +309,9 @@ export default class Table extends LabelField {
     }
 
     private textWidth(text: string, config?: PrintConfig): number {
+        // Measures text width in dots.
+        // If a font is registered and PrintConfig is provided, use accurate font metrics.
+        // Otherwise fall back to a simple monospace approximation.
         if(this.font.name == "default" || !config) {
             return text.length * this.font.size
         }
@@ -281,6 +319,8 @@ export default class Table extends LabelField {
     }
 
     private toPlainText(content: string): string {
+        // Measurement helpers should ignore formatting.
+        // This strips basic HTML tags used by the Text field's formatting support.
         return content.replace(/<[^>]*>/g, "")
     }
 }
