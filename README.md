@@ -39,6 +39,42 @@ This layer contains code to interact with printers
 
 - [TSPL](documentations/TSPL.pdf)
 
+## Label fields
+
+### Table
+
+The `Table` field draws a grid and places text into each cell. It uses the existing `Text` field for cell contents and the existing `Line` field for the grid lines.
+
+```ts
+import { Label } from "label-printer/dist/labels"
+import { Table } from "label-printer/dist/labels/fields"
+
+const label = new Label(50, 25)
+
+const table = new Table(10, 10, [
+  ["A1", "A2"],
+  ["B1", "B2"],
+], {
+  size: { width: 200, height: 100 },
+  columnWidths: [80, 120],
+  rowHeights: [40, 60],
+  lineThickness: 2,
+  cellPadding: 4,
+  formatted: false,
+  font: { name: "default", size: 10 },
+})
+
+label.add(table)
+```
+
+Sizing rules:
+
+- **If `size.width`/`size.height` are set**
+  - Any unspecified row/column sizes share the remaining space equally.
+  - Cell text is constrained to the cell content box and will wrap to multiple lines. If a row height is fixed, the text may be clipped once it reaches the height limit.
+- **If table size is not set**
+  - Unspecified row/column sizes are measured from their content.
+
 # Usefull units:
 
 - 1 pt = 1/72 inch

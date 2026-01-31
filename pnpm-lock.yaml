@@ -11,9 +11,6 @@ importers:
       fontkit:
         specifier: ^2.0.4
         version: 2.0.4
-      label-printer:
-        specifier: ^0.4.7
-        version: 0.4.7
       node-html-parser:
         specifier: ^6.1.13
         version: 6.1.13
@@ -1465,9 +1462,6 @@ packages:
   kleur@3.0.3:
     resolution: {integrity: sha512-eTIzlVOSUR+JxdDFepEYcBMtZ9Qqdef+rnzWdRZuMbOywu5tO2w2N7rqjoANZ5k9vywhL6Br1VRjUIgTQx4E8w==}
     engines: {node: '>=6'}
-
-  label-printer@0.4.7:
-    resolution: {integrity: sha512-JEEOILcK7m/tXvm0kmCaRItIYU5lzC2kbCcc4BDq2/4K7L0XmsswAiHUXuIwY1p/xu9yNilncIKPjH2vacm7SQ==}
 
   leven@3.1.0:
     resolution: {integrity: sha512-qsda+H8jTaUaN/x5vzW2rzc+8Rw4TAQ/4KjB46IwK5VH+IlVeeeje/EoZRpiXvIqjFgK84QffqPztGI3VBLG1A==}
@@ -3835,12 +3829,6 @@ snapshots:
       graceful-fs: 4.2.11
 
   kleur@3.0.3: {}
-
-  label-printer@0.4.7:
-    dependencies:
-      fontkit: 2.0.4
-      node-html-parser: 6.1.13
-      usb: 2.15.0
 
   leven@3.1.0: {}
 
