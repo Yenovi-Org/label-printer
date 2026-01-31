@@ -88,6 +88,8 @@ Sizing rules:
 
 # Update package
 
-- Run `pnpm changeset` to create change. This change has to be merged into main first
-- Run `pnpm changeset version` to create an update with all the versions. 
+- Make changes on feature branch.
+- Run `pnpm changeset` on feature branch to create change.
+- Merge feature branch into main.
+- Run `pnpm changeset version` on main to create an update with all the versions. 
 - PR is automatically created on push, merge it to trigger publish
