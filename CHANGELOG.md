@@ -1,5 +1,11 @@
 # label-printer
 
+## 0.5.0
+
+### Minor Changes
+
+- 3d09006: Added new field type for rendering tables
+
 ## 0.4.11
 
 ### Patch Changes
