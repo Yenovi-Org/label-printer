@@ -1,5 +1,11 @@
 # label-printer
 
+## 0.5.3
+
+### Patch Changes
+
+- 46d5b0e: Added unit tests and improved default config
+
 ## 0.5.2
 
 ### Patch Changes
