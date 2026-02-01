@@ -71,7 +71,8 @@ export default class Label extends Printable {
     }
 
     async commandForLanguage(language: PrinterLanguage, config?: PrintConfig): Promise<Command> {
-        const commandList = await Promise.all(this.fields.map(field => field.commandForLanguage(language, config)))
+        const configuration = config ?? this.printConfig
+        const commandList = await Promise.all(this.fields.map(field => field.commandForLanguage(language, configuration)))
         return this.commandGeneratorFor(language).commandGroup(commandList)
     }
 
