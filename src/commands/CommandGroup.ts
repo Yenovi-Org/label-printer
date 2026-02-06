@@ -2,9 +2,9 @@ import { UsbDevice } from "@/helpers/USBUtils";
 import Command from "./Command";
 
 /**
- * A utility class that helps groupping commands together
- * Should be implemnted with a specific command type to ensure only commands for the same lagnuage are
- * groupped together
+ * A utility class that helps grouping commands together
+ * Should be implemented with a specific command type to ensure only commands for the same language are
+ * grouped together
  */
 export default abstract class CommandGroup<T extends Command> extends Command {
     private commands: T[]
@@ -27,6 +27,6 @@ export default abstract class CommandGroup<T extends Command> extends Command {
     }
 
     get commandString(): string {
-        return ""
+        return this.commands.map(c => c.commandString).join("\n")
     }
 }
