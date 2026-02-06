@@ -1,5 +1,11 @@
 # label-printer
 
+## 0.5.4
+
+### Patch Changes
+
+- 4a11e09: Fix missing command group string
+
 ## 0.5.3
 
 ### Patch Changes

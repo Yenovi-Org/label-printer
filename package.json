@@ -1,6 +1,6 @@
 {
   "name": "label-printer",
-  "version": "0.5.3",
+  "version": "0.5.4",
   "description": "js package providing an abstraction over different thermal printer languages",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
