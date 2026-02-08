@@ -58,6 +58,15 @@ export const requestDevice = async (): Promise<UsbDevice|undefined> => {
     }
 }
 
+ /**
+  * Request a USB device using WebUSB filters.
+  *
+  * - **Browser**: shows a device picker UI filtered by the supplied `vendorId`/`productId`.
+  * - **Node.js**: uses the underlying WebUSB implementation provided by the `usb` package.
+  *
+  * Note: WebUSB filters support `vendorId` and `productId`. Serial filtering is not
+  * part of the WebUSB request filters.
+  */
  export const requestDeviceWithFilters = async (filters: UsbRequestFilter[] = []): Promise<UsbDevice|undefined> => {
      const agent = await getUSB()
      const device = await agent.requestDevice({ filters: filters as any })

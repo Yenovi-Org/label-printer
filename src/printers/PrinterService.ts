@@ -94,12 +94,32 @@ export class PrinterService {
         }
     }
 
+    /**
+     * Create a printer instance using explicit connection information.
+     *
+     * This is useful when you already know your printer's network address or USB identifiers
+     * and want to bypass discovery.
+     *
+     * Behavior differs by environment:
+     * - **Node.js**
+     *   - `network`: connects via TCP (defaults to port `9100`)
+     *   - `usb`: selects the first connected USB device matching the provided filters
+     * - **Browser**
+     *   - `usb`: shows the WebUSB picker (optionally filtered by `vendorId`/`productId`)
+     *   - `network`: not supported (will throw if network transport is used in the browser)
+     */
     static async connect(options: PrinterServiceConnectOptions): Promise<Printer|undefined> {
         const device = await PrinterService.deviceForConnectOptions(options)
         if(!device) return undefined
         return PrinterService.printerForDevice(device)
     }
 
+    /**
+     * Create a TSPL printer instance using explicit connection information.
+     *
+     * This still verifies the target by probing it with the TSPL identify command (`~!I`).
+     * If the probe fails, `undefined` is returned.
+     */
     static async connectTSPL(options: PrinterServiceConnectOptions): Promise<TSPLPrinter|undefined> {
         const device = await PrinterService.deviceForConnectOptions(options)
         if(!device) return undefined
@@ -109,6 +129,11 @@ export class PrinterService {
         return new TSPLPrinter(device)
     }
 
+    /**
+     * Convert user-facing connect options into a concrete device.
+     *
+     * This keeps transport details (USB vs TCP socket) out of the public API.
+     */
     private static async deviceForConnectOptions(options: PrinterServiceConnectOptions): Promise<Device|undefined> {
         if("network" in options) {
             const port = options.network.port ?? 9100
