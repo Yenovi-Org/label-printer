@@ -7,18 +7,77 @@ on:
     branches:
       - main
   workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
-    test:
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@v4
-            - name: 'Use Node.js'
-              uses: actions/setup-node@v4
-              with:
-                node-version: 20
-            - name: 'Use PNPM'
-              uses: pnpm/action-setup@v4
-              with:
-                version: 10
-            - run: pnpm install
-            - run: pnpm test
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: 'Use Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: 'Use PNPM'
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - run: pnpm install
+      - run: pnpm test -- --coverage
+
+      - name: Add coverage to job summary
+        if: always()
+        run: |
+          node -e "const fs=require('fs'); const path='coverage/coverage-summary.json'; if(!fs.existsSync(path)){ console.log('No coverage summary found'); process.exit(0); } const s=JSON.parse(fs.readFileSync(path,'utf8')).total; const fmt=v=>String(v).padStart(6); const lines=[
+            '## Test Coverage',
+            '',
+            '| Metric | % | Covered/Total |',
+            '|---|---:|---:|',
+            `| Statements | ${s.statements.pct}% | ${s.statements.covered}/${s.statements.total} |`,
+            `| Branches | ${s.branches.pct}% | ${s.branches.covered}/${s.branches.total} |`,
+            `| Functions | ${s.functions.pct}% | ${s.functions.covered}/${s.functions.total} |`,
+            `| Lines | ${s.lines.pct}% | ${s.lines.covered}/${s.lines.total} |`,
+          ]; fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, lines.join('\n')+'\n');"
+
+      - name: Post coverage comment to PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs')
+            const path = 'coverage/coverage-summary.json'
+            if(!fs.existsSync(path)) {
+              core.info('No coverage summary found, skipping PR comment')
+              return
+            }
+
+            const total = JSON.parse(fs.readFileSync(path, 'utf8')).total
+
+            const body = [
+              '## Test Coverage',
+              '',
+              '| Metric | % | Covered/Total |',
+              '|---|---:|---:|',
+              `| Statements | ${total.statements.pct}% | ${total.statements.covered}/${total.statements.total} |`,
+              `| Branches | ${total.branches.pct}% | ${total.branches.covered}/${total.branches.total} |`,
+              `| Functions | ${total.functions.pct}% | ${total.functions.covered}/${total.functions.total} |`,
+              `| Lines | ${total.lines.pct}% | ${total.lines.covered}/${total.lines.total} |`,
+              '',
+              '<sub>Posted by GitHub Actions.</sub>'
+            ].join('\n')
+
+            const { owner, repo } = context.repo
+            const issue_number = context.payload.pull_request.number
+            const marker = '<sub>Posted by GitHub Actions.</sub>'
+
+            const existing = await github.rest.issues.listComments({ owner, repo, issue_number, per_page: 100 })
+            const previous = existing.data.find(c => c.user?.type === 'Bot' && typeof c.body === 'string' && c.body.includes(marker))
+
+            if(previous) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: previous.id, body })
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body })
+            }
