@@ -24,6 +24,7 @@ export type BWBitmap = BitmapLike
 
 const BLACK_PIXEL = 0
 const WHITE_PIXEL = 1
+const DEFAULT_THRESHOLD = 200
 
 /**
  * Set of image utility
@@ -85,19 +86,23 @@ export default class ImageUtils {
                 const r = data[baseIndex]
                 const g = data[baseIndex + 1]
                 const b = data[baseIndex + 2]
-                const a = data[baseIndex + 3]
-    
-                if(a > 128) {
-                    const avg = (r + g + b) / 3
-    
-                    if(avg > 128) {
-                        bitmapData[destinationIndex] = WHITE_PIXEL
-                    } else {
-                        bitmapData[destinationIndex] = BLACK_PIXEL
-                    }
-                } else {
+                const a = bitsPerPixel > 3 ? data[baseIndex + 3] : 255
+
+                // Composite onto white background first (important for antialiasing and transparent pixels)
+                const alpha = a / 255
+                const rC = r * alpha + 255 * (1 - alpha)
+                const gC = g * alpha + 255 * (1 - alpha)
+                const bC = b * alpha + 255 * (1 - alpha)
+
+                // Luminance (0..255)
+                const luminance = (0.299 * rC) + (0.587 * gC) + (0.114 * bC)
+
+                if (luminance > DEFAULT_THRESHOLD) {
                     bitmapData[destinationIndex] = WHITE_PIXEL
+                } else {
+                    bitmapData[destinationIndex] = BLACK_PIXEL
                 }
+
                 destinationIndex += 1
             }
     
