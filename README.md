@@ -2,44 +2,192 @@
 
 > :warning: `label-printer` is still under heavy development and is subject to frequent API changes
 
-This package provides a js based implementation for variouse languages used for label printers
+This package provides a TypeScript/JavaScript API to:
 
-## Layers
+- **Build labels** in a printer-language-independent way
+- **Generate printer commands** (currently TSPL focused)
+- **Find and talk to printers**
+  - **Browser**: via WebUSB
+  - **Node.js**: via USB and **automatic network discovery** (TCP/9100)
 
-The packages is logacally divided into multiple sub layers. These are not separate modules per say, but separated parts of the code that serve different purposes
+## Installation
 
-### 1. Command Layer
+```bash
+npm install label-printer
+```
 
-This layer provides a low lever wrapper for the different languages commands. Using this module, you can create commands that suite your needs the best or you can integrate this pacakge in your codebase
+## Main exports
 
-#### TODO
+The library exposes three main areas:
 
-- Finish implementing basic commands
-- Add example code
+- **Commands**: `import { Command } from "label-printer"`
+- **Labels**: `import { Label } from "label-printer"`
+- **Printers**: `import { PrinterService } from "label-printer"`
 
-### 2. Label layer
+## Runtime support (Browser vs Node)
 
-This layer provides a language independent API to construct a label (object representation) without any knowledge of the fine details of the printer the label will be printed on.
+### Browser
 
-#### TODO
+- Uses **WebUSB** to communicate with USB label printers.
+- Typical entry point: `PrinterService.requestPrinter()`.
 
-- Add example code
-- Implement layer
+### Node.js
 
-### 3. Printer layer
+- Supports USB printing (where supported by the `usb` dependency).
+- Supports **network printing over TCP** (raw printing, usually port `9100`).
+- Supports **automatic network discovery**:
+  - First attempts Bonjour/mDNS discovery of printer-related services
+  - If Bonjour yields no candidates, falls back to a conservative private-subnet scan
+  - Every discovered candidate is **verified** by sending the TSPL identify command (`~!I`)
 
-This layer contains code to interact with printers
+## Printer layer
 
-#### TODO
+### Discover printers
 
-- Add example code
-- Implement layer
+```ts
+import { PrinterService } from "label-printer"
 
-## Documentation of supported languages
+const printers = await PrinterService.getPrinters()
+if(printers.length === 0) {
+  throw new Error("No printers found")
+}
+
+const printer = printers[0]
+```
+
+### Request a printer (browser-focused)
+
+```ts
+import { PrinterService } from "label-printer"
+
+const printer = await PrinterService.requestPrinter()
+if(!printer) throw new Error("No printer selected")
+```
+
+### Print or display a label
+
+```ts
+import { Label } from "label-printer"
+
+const label = new Label(50, 25)
+// 1 label, 3mm gap
+await printer.print(label, 1, 3)
+// or
+await printer.display(label)
+
+await printer.close()
+```
+
+### Direct network usage (Node.js)
+
+If you already know the printer IP and want to bypass discovery:
+
+```ts
+import TSPLPrinter from "label-printer/dist/printers/TSPLPrinter"
+import NetworkDevice from "label-printer/dist/helpers/NetworkDevice"
+
+const printer = new TSPLPrinter(new NetworkDevice("192.168.100.31", 9100))
+```
+
+## Device abstraction
+
+Commands write to a transport-agnostic `Device` interface. This enables the same printer and label APIs to work over different transports.
+
+- **USB** device implementation is internal to `USBUtils`.
+- **NetworkDevice** is a TCP implementation used in Node.js.
+
+## Label layer
+
+The label layer provides a language-independent way to construct labels, which can then be rendered to commands for the chosen printer language.
+
+```ts
+import { Label } from "label-printer"
+
+const label = new Label(50, 25)
+// label.add(...fields)
+```
+
+## Supported languages
 
 - [TSPL](documentations/TSPL.pdf)
 
-## Label fields
+## Fields
+
+Fields live under `label-printer/dist/labels/fields` in the built output.
+
+### Text
+
+Create a text field at (`x`, `y`) in **dots**.
+
+```ts
+import { Label } from "label-printer/dist/labels"
+import { Text } from "label-printer/dist/labels/fields"
+
+const label = new Label(50, 25)
+
+const text = new Text("Hello", 20, 20, true)
+text.setSingleLine(200)
+
+label.add(text)
+```
+
+Text wrapping/clipping:
+
+- `text.setSingleLine(width?)`
+- `text.setMultiLine(width, height?)`
+
+Formatted text (when `formatted = true`) supports basic tags:
+
+- `<b>...</b>`: bold (uses weight `700`)
+- `<i>...</i>`: italic
+- `<u>...</u>`: underline
+- `<s>...</s>`: strike
+
+### Line
+
+Draw a line between two points (values in **dots**).
+
+```ts
+import { Line } from "label-printer/dist/labels/fields"
+
+label.add(new Line({ x: 10, y: 10 }, { x: 300, y: 10 }, 3))
+```
+
+### Image
+
+Draw a black/white bitmap image. You can either provide a bitmap-like object directly,
+or use the async helper to load/convert an image.
+
+```ts
+import { Image } from "label-printer/dist/labels/fields"
+
+const img = await Image.create("./logo.png", 10, 60, 200)
+label.add(img)
+```
+
+### BarCode
+
+Draw a barcode (TSPL-backed). Values are in **dots**.
+
+```ts
+import { BarCode } from "label-printer/dist/labels/fields"
+
+const barcode = new BarCode("123456789", 20, 120, "CODE128", 80)
+barcode.setHumanReadable("bottom")
+barcode.setRotation(0)
+
+label.add(barcode)
+```
+
+### QRCode
+
+Draw a QR code.
+
+```ts
+import { QRCode } from "label-printer/dist/labels/fields"
+
+label.add(new QRCode("https://example.com", 20, 220, 6))
+```
 
 ### Table
 
@@ -75,16 +223,88 @@ Sizing rules:
 - **If table size is not set**
   - Unspecified row/column sizes are measured from their content.
 
-# Usefull units:
+## Command layer
+
+The command layer is the lowest level and represents printer-language-specific commands.
+
+Most users will not need this directly. It is primarily used internally by `Label` to generate
+print/display command sequences.
+
+## Public API summary
+
+- **`Label`**
+  - Construct labels and add fields
+  - Generate language-specific print/display commands via printer layer
+- **`PrinterService`**
+  - `getPrinters()`
+    - Browser: discovers accessible USB printers
+    - Node: discovers USB printers + network printers (Bonjour/mDNS, then subnet scan fallback)
+  - `requestPrinter()`
+    - Browser: prompts user for a USB device
+    - Node: selects first available USB device (may return `undefined`)
+- **`Printer`**
+  - `print(label, sets, gap, copiesPerSet?, direction?, mirror?, gapOffset?)`
+  - `display(label, direction?, mirror?)`
+  - `close()`
+
+## Notes
+
+### Useful units
 
 - 1 pt = 1/72 inch
 - 1 dot = 1 / dpi
 
-# Notes
+### Fonts
 
-- If a font is not working, make sure the extension is TTF
-- If you want to use bold fonts, make sure you have one for weight 700
-- Regular font weight is 400
+There are two ways to use fonts:
+
+1. Use printer built-in fonts (by using `name: "default"`)
+2. Register and use custom fonts on a per-`Label` basis
+
+#### Set a font on `Text` / `Table`
+
+Fonts are configured using a `FontOption`:
+
+```ts
+text.setFont({ name: "default", size: 10 })
+// or
+text.setFont({ name: "MyFont", size: 18, weight: 700, style: "normal" })
+```
+
+- `size` is specified in **dots**.
+- `weight` defaults to `400`.
+- `style` defaults to `"normal"`.
+
+#### Register a custom font on a `Label`
+
+Registering fonts enables better text measurement (for wrapping) and ensures the font is uploaded
+as part of the generated print/display command sequence.
+
+```ts
+import { Label } from "label-printer/dist/labels"
+
+const label = new Label(50, 25)
+
+await label.registerFont({
+  name: "MyFont",
+  data: await (await fetch("/fonts/MyFont-Regular.ttf")).arrayBuffer(),
+  weight: 400,
+  style: "normal",
+})
+
+await label.registerFont({
+  name: "MyFont",
+  data: await (await fetch("/fonts/MyFont-Bold.ttf")).arrayBuffer(),
+  weight: 700,
+  style: "normal",
+})
+```
+
+Font notes:
+
+- If a font is not working, make sure the extension is **TTF**.
+- If you want bold text, register a `weight: 700` variant.
+- When using formatted text (`<b>...</b>`), the library will request `weight: 700`.
 
 # Update package
 
