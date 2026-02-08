@@ -1,5 +1,11 @@
 # label-printer
 
+## 0.7.0
+
+### Minor Changes
+
+- aaba51a: Support network printers
+
 ## 0.6.0
 
 ### Minor Changes
