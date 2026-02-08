@@ -35,7 +35,7 @@ export default class Image extends LabelField {
      * @param height 
      * @returns 
      */
-    static async create(image: string, x: number, y: number, width?: number, height?: number): Promise<Image> {
+    static async create(image: string|Blob, x: number, y: number, width?: number, height?: number): Promise<Image> {
         const bitmap = await ImageUtils.getBWBitmap(image, width, height)
 
         return new Image(x, y, bitmap)

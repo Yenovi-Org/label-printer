@@ -24,6 +24,7 @@ export type BWBitmap = BitmapLike
 
 const BLACK_PIXEL = 0
 const WHITE_PIXEL = 1
+const DEFAULT_THRESHOLD = 200
 
 /**
  * Set of image utility
@@ -32,10 +33,11 @@ export default class ImageUtils {
     /**
      * Get pixel information about an image
      * @param image Image to process
+     * @param target Optional target raster size. Useful for vector inputs (e.g. SVG) to rasterize at the final size.
      * @returns 
      */
-    static async getPixels(image: string|Blob): Promise<Pixels> {
-        return await ImageProcessor.getImageData(image)
+    static async getPixels(image: string|Blob, target?: { width: number; height: number }): Promise<Pixels> {
+        return await ImageProcessor.getImageData(image, target)
     }
 
     /**
@@ -48,13 +50,18 @@ export default class ImageUtils {
      * @param destinationHeight Height of the output bitmap
      * @returns 
      */
-    static async getBWBitmap(image: string, destinationWidth?: number, destinationHeight?: number): Promise<BWBitmap> {
+    static async getBWBitmap(image: string|Blob, destinationWidth?: number, destinationHeight?: number): Promise<BWBitmap> {
         const {
             data,
             width,
             height,
             bitsPerPixel
-        } = await this.getPixels(image)
+        } = await this.getPixels(
+            image,
+            destinationWidth != null && destinationHeight != null
+                ? { width: destinationWidth, height: destinationHeight }
+                : undefined
+        )
     
         const dim = getSizePreserveAspect(width, height, destinationWidth, destinationHeight)
         // Number of pixels width and height => number of bits for each row and number of rows
@@ -79,19 +86,23 @@ export default class ImageUtils {
                 const r = data[baseIndex]
                 const g = data[baseIndex + 1]
                 const b = data[baseIndex + 2]
-                const a = data[baseIndex + 3]
-    
-                if(a > 128) {
-                    const avg = (r + g + b) / 3
-    
-                    if(avg > 128) {
-                        bitmapData[destinationIndex] = WHITE_PIXEL
-                    } else {
-                        bitmapData[destinationIndex] = BLACK_PIXEL
-                    }
-                } else {
+                const a = bitsPerPixel > 3 ? data[baseIndex + 3] : 255
+
+                // Composite onto white background first (important for antialiasing and transparent pixels)
+                const alpha = a / 255
+                const rC = r * alpha + 255 * (1 - alpha)
+                const gC = g * alpha + 255 * (1 - alpha)
+                const bC = b * alpha + 255 * (1 - alpha)
+
+                // Luminance (0..255)
+                const luminance = (0.299 * rC) + (0.587 * gC) + (0.114 * bC)
+
+                if (luminance > DEFAULT_THRESHOLD) {
                     bitmapData[destinationIndex] = WHITE_PIXEL
+                } else {
+                    bitmapData[destinationIndex] = BLACK_PIXEL
                 }
+
                 destinationIndex += 1
             }
     

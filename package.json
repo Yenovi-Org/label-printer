@@ -38,6 +38,7 @@
   "dependencies": {
     "fontkit": "^2.0.4",
     "node-html-parser": "^6.1.13",
+    "@resvg/resvg-js": "^2.6.2",
     "usb": "^2.15.0"
   }
 }
