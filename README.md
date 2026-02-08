@@ -20,16 +20,16 @@ npm install label-printer
 
 The library exposes three main areas:
 
-- **Commands**: `import { Command } from "label-printer"`
-- **Labels**: `import { Label } from "label-printer"`
-- **Printers**: `import { PrinterService } from "label-printer"`
+- **Commands**: `import { commands } from "label-printer"`
+- **Labels**: `import { labels } from "label-printer"`
+- **Printers**: `import { printers } from "label-printer"`
 
 ## Runtime support (Browser vs Node)
 
 ### Browser
 
 - Uses **WebUSB** to communicate with USB label printers.
-- Typical entry point: `PrinterService.requestPrinter()`.
+- Typical entry point: `printers.PrinterService.requestPrinter()`.
 
 ### Node.js
 
@@ -45,31 +45,31 @@ The library exposes three main areas:
 ### Discover printers
 
 ```ts
-import { PrinterService } from "label-printer"
+import { printers } from "label-printer"
 
-const printers = await PrinterService.getPrinters()
-if(printers.length === 0) {
+const printersList = await printers.PrinterService.getPrinters()
+if(printersList.length === 0) {
   throw new Error("No printers found")
 }
 
-const printer = printers[0]
+const printer = printersList[0]
 ```
 
 ### Request a printer (browser-focused)
 
 ```ts
-import { PrinterService } from "label-printer"
+import { printers } from "label-printer"
 
-const printer = await PrinterService.requestPrinter()
+const printer = await printers.PrinterService.requestPrinter()
 if(!printer) throw new Error("No printer selected")
 ```
 
 ### Print or display a label
 
 ```ts
-import { Label } from "label-printer"
+import { labels } from "label-printer"
 
-const label = new Label(50, 25)
+const label = new labels.Label(50, 25)
 // 1 label, 3mm gap
 await printer.print(label, 1, 3)
 // or
@@ -78,15 +78,48 @@ await printer.display(label)
 await printer.close()
 ```
 
-### Direct network usage (Node.js)
+### Connect directly (bypass discovery)
 
-If you already know the printer IP and want to bypass discovery:
+If you already know how to reach your printer (network address or USB identifiers), you can create a printer instance directly.
+
+Auto-detect language (recommended default):
 
 ```ts
-import TSPLPrinter from "label-printer/dist/printers/TSPLPrinter"
-import NetworkDevice from "label-printer/dist/helpers/NetworkDevice"
+import { printers } from "label-printer"
 
-const printer = new TSPLPrinter(new NetworkDevice("192.168.100.31", 9100))
+const printer = await printers.PrinterService.connect({ network: { host: "192.168.100.31" } })
+if(!printer) throw new Error("Printer not found or not supported")
+```
+
+Explicit TSPL (when you know it's a TSPL printer):
+
+```ts
+import { printers } from "label-printer"
+
+const printer = await printers.PrinterService.connectTSPL({ network: { host: "192.168.100.31", port: 9100 } })
+if(!printer) throw new Error("Not a TSPL printer")
+```
+
+USB (Node.js - filter without a prompt):
+
+```ts
+import { printers } from "label-printer"
+
+const printer = await printers.PrinterService.connect({
+  usb: { vendorId: 0x1234, productId: 0x5678, serialNumber: "ABC" }
+})
+if(!printer) throw new Error("Printer not found or not supported")
+```
+
+USB (Browser - shows a picker; you can optionally filter by `vendorId` / `productId`):
+
+```ts
+import { printers } from "label-printer"
+
+const printer = await printers.PrinterService.connect({
+  usb: { vendorId: 0x1234, productId: 0x5678 }
+})
+if(!printer) throw new Error("No printer selected")
 ```
 
 ## Device abstraction
@@ -94,16 +127,16 @@ const printer = new TSPLPrinter(new NetworkDevice("192.168.100.31", 9100))
 Commands write to a transport-agnostic `Device` interface. This enables the same printer and label APIs to work over different transports.
 
 - **USB** device implementation is internal to `USBUtils`.
-- **NetworkDevice** is a TCP implementation used in Node.js.
+- **Network** support uses a TCP implementation in Node.js.
 
 ## Label layer
 
 The label layer provides a language-independent way to construct labels, which can then be rendered to commands for the chosen printer language.
 
 ```ts
-import { Label } from "label-printer"
+import { labels } from "label-printer"
 
-const label = new Label(50, 25)
+const label = new labels.Label(50, 25)
 // label.add(...fields)
 ```
 
@@ -113,19 +146,18 @@ const label = new Label(50, 25)
 
 ## Fields
 
-Fields live under `label-printer/dist/labels/fields` in the built output.
+Fields are available from the package root export.
 
 ### Text
 
 Create a text field at (`x`, `y`) in **dots**.
 
 ```ts
-import { Label } from "label-printer/dist/labels"
-import { Text } from "label-printer/dist/labels/fields"
+import { labels } from "label-printer"
 
-const label = new Label(50, 25)
+const label = new labels.Label(50, 25)
 
-const text = new Text("Hello", 20, 20, true)
+const text = new labels.Text("Hello", 20, 20, true)
 text.setSingleLine(200)
 
 label.add(text)
@@ -148,9 +180,9 @@ Formatted text (when `formatted = true`) supports basic tags:
 Draw a line between two points (values in **dots**).
 
 ```ts
-import { Line } from "label-printer/dist/labels/fields"
+import { labels } from "label-printer"
 
-label.add(new Line({ x: 10, y: 10 }, { x: 300, y: 10 }, 3))
+label.add(new labels.Line({ x: 10, y: 10 }, { x: 300, y: 10 }, 3))
 ```
 
 ### Image
@@ -159,9 +191,9 @@ Draw a black/white bitmap image. You can either provide a bitmap-like object dir
 or use the async helper to load/convert an image.
 
 ```ts
-import { Image } from "label-printer/dist/labels/fields"
+import { labels } from "label-printer"
 
-const img = await Image.create("./logo.png", 10, 60, 200)
+const img = await labels.Image.create("./logo.png", 10, 60, 200)
 label.add(img)
 ```
 
@@ -170,9 +202,9 @@ label.add(img)
 Draw a barcode (TSPL-backed). Values are in **dots**.
 
 ```ts
-import { BarCode } from "label-printer/dist/labels/fields"
+import { labels } from "label-printer"
 
-const barcode = new BarCode("123456789", 20, 120, "CODE128", 80)
+const barcode = new labels.BarCode("123456789", 20, 120, "CODE128", 80)
 barcode.setHumanReadable("bottom")
 barcode.setRotation(0)
 
@@ -184,9 +216,9 @@ label.add(barcode)
 Draw a QR code.
 
 ```ts
-import { QRCode } from "label-printer/dist/labels/fields"
+import { labels } from "label-printer"
 
-label.add(new QRCode("https://example.com", 20, 220, 6))
+label.add(new labels.QRCode("https://example.com", 20, 220, 6))
 ```
 
 ### Table
@@ -194,12 +226,11 @@ label.add(new QRCode("https://example.com", 20, 220, 6))
 The `Table` field draws a grid and places text into each cell. It uses the existing `Text` field for cell contents and the existing `Line` field for the grid lines.
 
 ```ts
-import { Label } from "label-printer/dist/labels"
-import { Table } from "label-printer/dist/labels/fields"
+import { labels } from "label-printer"
 
-const label = new Label(50, 25)
+const label = new labels.Label(50, 25)
 
-const table = new Table(10, 10, [
+const table = new labels.Table(10, 10, [
   ["A1", "A2"],
   ["B1", "B2"],
 ], {
@@ -281,9 +312,9 @@ Registering fonts enables better text measurement (for wrapping) and ensures the
 as part of the generated print/display command sequence.
 
 ```ts
-import { Label } from "label-printer/dist/labels"
+import { labels } from "label-printer"
 
-const label = new Label(50, 25)
+const label = new labels.Label(50, 25)
 
 await label.registerFont({
   name: "MyFont",
