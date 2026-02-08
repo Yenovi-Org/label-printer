@@ -3,8 +3,6 @@ import { Label } from "@/labels"
 // import classicExample from "./exampleCases/classicExample"
 // import tableExample from "./exampleCases/tableExample"
 import svgExample from "./exampleCases/imageTypesExample"
-import TSPLPrinter from "@/printers/TSPLPrinter";
-import NetworkDevice from "@/helpers/NetworkDevice";
 
 function sleep(ms: number) {
     return new Promise((resolve) => setTimeout(resolve, ms));
@@ -37,7 +35,10 @@ export default async () => {
 
     if (monitorPrinter) {
         console.log("Monitoring printer")
-        const printer = new TSPLPrinter(new NetworkDevice("192.168.100.31", 9100))
+        const printer = await PrinterService.connectTSPL({ network: { host: "192.168.100.31", port: 9100 } })
+        if(!printer) {
+            throw new Error("Could not connect to TSPL printer")
+        }
 
         while(true) {
             const model = await printer.getModelname()
