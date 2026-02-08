@@ -2,6 +2,7 @@
 
 > :warning: `label-printer` is still under heavy development and is subject to frequent API changes
 
+
 This package provides a TypeScript/JavaScript API to:
 
 - **Build labels** in a printer-language-independent way

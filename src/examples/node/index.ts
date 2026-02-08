@@ -44,6 +44,7 @@ export default async () => {
             const model = await printer.getModelname()
             const status = await printer.getStatus()
             console.log(`[${new Date().toISOString()}] ${model} - ${status}`)
+            
             await sleep(5000)
         }
     }
