@@ -16,7 +16,7 @@ export default class TSPLPrinter extends Printer {
     static async try(device: UsbDevice): Promise<boolean> {
         if(!device.opened) await device.openAndConfigure()
         const testCommand = new TSPLRawCommand("~!I")
-        await testCommand.write(device)
+        await testCommand.writeTo(device)
 
         const response = await device.readString(64)
         await device.close()

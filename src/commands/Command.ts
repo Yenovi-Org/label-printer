@@ -18,7 +18,7 @@ export default abstract class Command {
      * Write the command data to a USB device
      * @param device Device to write to
      */
-    async write(device: UsbDevice): Promise<void> {
+    async writeTo(device: UsbDevice): Promise<void> {
         await this.writeString(this.commandString, device)
         await this.terminateCommand(device)
     }

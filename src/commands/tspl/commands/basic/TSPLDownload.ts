@@ -26,7 +26,7 @@ export default class TSPLDownload extends TSPLCommand {
         return `DOWNLOAD "${this.fileName}", ${this.data.byteLength},`
     }
 
-    async write(device: UsbDevice): Promise<void> {
+    async writeTo(device: UsbDevice): Promise<void> {
         await this.writeString(this.commandString, device)
         await this.writeBytes(this.data, device)
         await this.terminateCommand(device)

@@ -48,7 +48,7 @@ export default class TSPLBitmapCommand extends TSPLVisualCommand {
         }
     }
 
-    async write(device: UsbDevice): Promise<void> {
+    async writeTo(device: UsbDevice): Promise<void> {
         await this.writeString(this.commandWithoutBytes, device)
         await this.writeBytes(this.bitmap.bytes, device)
         await this.terminateCommand(device)

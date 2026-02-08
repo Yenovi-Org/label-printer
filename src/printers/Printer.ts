@@ -60,7 +60,7 @@ export default abstract class Printer {
      */
     async writeCommand(command: Command): Promise<void> {
         if(!this.usbDevice.opened) await this.usbDevice.openAndConfigure()
-        await command.write(this.usbDevice)
+        await command.writeTo(this.usbDevice)
     }
 
     /**
