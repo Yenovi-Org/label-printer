@@ -1,5 +1,11 @@
 export type DeviceReadResult = DataView|undefined
 
+/**
+ * Transport-agnostic device interface.
+ *
+ * Implementations can represent a USB device (browser/node) or a network socket (node).
+ * Commands write to this interface so printers can be used over different transports.
+ */
 export default interface Device {
     get opened(): boolean
 

@@ -31,6 +31,15 @@ export type BonjourService = {
     type?: string
 }
 
+/**
+ * Discover services using Bonjour/mDNS.
+ *
+ * This is a Node-only helper. It dynamically requires the `bonjour` module so the library can
+ * still be imported/bundled in browser contexts.
+ *
+ * @param types Bonjour service types without the leading underscore (e.g. `printer`, `ipp`)
+ * @param timeoutMs Discovery window
+ */
 export const discoverBonjourServices = async (types: string[], timeoutMs: number = 1500): Promise<BonjourService[]> => {
     if(typeof window !== "undefined") return []
 

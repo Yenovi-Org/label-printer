@@ -25,6 +25,15 @@ export class PrinterService {
         return undefined
     }
 
+    /**
+     * Discover devices using printer-specific discovery hooks.
+     *
+     * Each printer class may optionally implement `static discoverDevices(): Promise<Device[]>`
+     * to find candidates over non-USB transports.
+     *
+     * Candidates returned here are still verified by `printerForDevice` via the printer
+     * class' `try(device)` method.
+     */
     private static async discoverDevices(): Promise<Device[]> {
         const classes = [TSPLPrinter]
 

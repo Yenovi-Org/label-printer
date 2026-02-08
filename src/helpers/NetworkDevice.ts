@@ -35,6 +35,16 @@ export default class NetworkDevice implements Device {
     private readonly connectTimeoutMs: number
     private readonly readTimeoutMs: number
 
+    /**
+     * Create a TCP-based device.
+     *
+     * This is intended for raw printing ports (typically 9100). It is Node-only.
+     *
+     * @param host Hostname or IP
+     * @param port TCP port (defaults to 9100)
+     * @param connectTimeoutMs Connection timeout
+     * @param readTimeoutMs Read timeout used by `readData`/`readString`
+     */
     constructor(host: string, port: number = 9100, connectTimeoutMs: number = 2000, readTimeoutMs: number = 500) {
         this.host = host
         this.port = port
