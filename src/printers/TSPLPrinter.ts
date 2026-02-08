@@ -2,6 +2,8 @@ import { TSPLRawCommand } from "@/commands/tspl";
 import { PrinterLanguage } from "@/commands"
 import Printer from "./Printer";
 import Device from "@/helpers/Device";
+import NetworkDevice from "@/helpers/NetworkDevice";
+import { discoverBonjourServices } from "@/helpers/BonjourUtils";
 
 export default class TSPLPrinter extends Printer {
     get language(): PrinterLanguage {
@@ -22,5 +24,16 @@ export default class TSPLPrinter extends Printer {
         await device.close()
         // If there is a response, we have a TSPL printer
         return !!response
+    }
+
+    static async discoverDevices(): Promise<NetworkDevice[]> {
+        if(typeof window !== "undefined") return []
+
+        const services = await discoverBonjourServices([
+            "pdl-datastream",
+            "printer",
+        ])
+
+        return services.map(s => new NetworkDevice(s.host, s.port))
     }
 }

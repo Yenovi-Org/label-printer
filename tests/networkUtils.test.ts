@@ -1,33 +1,10 @@
-import { getNetworkTargetsFromEnv } from "@/helpers/NetworkUtils"
+import { discoverBonjourServices } from "@/helpers/BonjourUtils"
 
-describe("NetworkUtils.getNetworkTargetsFromEnv", () => {
-    const originalEnv = process.env
-
-    beforeEach(() => {
-        process.env = { ...originalEnv }
-    })
-
-    afterEach(() => {
-        process.env = originalEnv
-    })
-
-    test("returns empty list when env var is not set", () => {
-        delete process.env.LABEL_PRINTER_NETWORK_TARGETS
-        expect(getNetworkTargetsFromEnv()).toEqual([])
-    })
-
-    test("parses host:port entries", () => {
-        process.env.LABEL_PRINTER_NETWORK_TARGETS = "192.168.0.10:9100,192.168.0.11:9101"
-        expect(getNetworkTargetsFromEnv()).toEqual([
-            { host: "192.168.0.10", port: 9100 },
-            { host: "192.168.0.11", port: 9101 },
-        ])
-    })
-
-    test("parses host without port", () => {
-        process.env.LABEL_PRINTER_NETWORK_TARGETS = "printer.local"
-        expect(getNetworkTargetsFromEnv()).toEqual([
-            { host: "printer.local", port: undefined },
-        ])
+describe("BonjourUtils.discoverBonjourServices", () => {
+    test("returns empty list in browser environment", async () => {
+        ;(global as any).window = {}
+        const result = await discoverBonjourServices(["printer"], 10)
+        expect(result).toEqual([])
+        delete (global as any).window
     })
 })
