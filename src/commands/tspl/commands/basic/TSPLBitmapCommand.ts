@@ -1,7 +1,7 @@
 import ImageUtils, { BWBitmap } from "@/helpers/ImageUtils";
 import { GraphicMode } from "../../types";
 import TSPLVisualCommand from "../TSPLVisualCommand";
-import { UsbDevice } from "@/helpers/USBUtils";
+import Device from "@/helpers/Device";
 
 /**
  * Represents a bitmap command. Can be used to draw an image to the label
@@ -48,7 +48,7 @@ export default class TSPLBitmapCommand extends TSPLVisualCommand {
         }
     }
 
-    async writeTo(device: UsbDevice): Promise<void> {
+    async writeTo(device: Device): Promise<void> {
         await this.writeString(this.commandWithoutBytes, device)
         await this.writeBytes(this.bitmap.bytes, device)
         await this.terminateCommand(device)

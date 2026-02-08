@@ -1,4 +1,4 @@
-import { UsbDevice } from "@/helpers/USBUtils"
+import Device from "@/helpers/Device"
 import TSPLCommand from "../../TSPLCommand"
 
 type Data = ArrayBuffer|Uint8Array
@@ -26,7 +26,7 @@ export default class TSPLDownload extends TSPLCommand {
         return `DOWNLOAD "${this.fileName}", ${this.data.byteLength},`
     }
 
-    async writeTo(device: UsbDevice): Promise<void> {
+    async writeTo(device: Device): Promise<void> {
         await this.writeString(this.commandString, device)
         await this.writeBytes(this.data, device)
         await this.terminateCommand(device)

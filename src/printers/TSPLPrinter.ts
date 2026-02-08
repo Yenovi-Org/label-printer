@@ -1,7 +1,7 @@
 import { TSPLRawCommand } from "@/commands/tspl";
 import { PrinterLanguage } from "@/commands"
 import Printer from "./Printer";
-import { UsbDevice } from "@/helpers/USBUtils";
+import Device from "@/helpers/Device";
 
 export default class TSPLPrinter extends Printer {
     get language(): PrinterLanguage {
@@ -13,7 +13,7 @@ export default class TSPLPrinter extends Printer {
         await this.writeCommand(feedCommand)
     }
 
-    static async try(device: UsbDevice): Promise<boolean> {
+    static async try(device: Device): Promise<boolean> {
         if(!device.opened) await device.openAndConfigure()
         const testCommand = new TSPLRawCommand("~!I")
         await testCommand.writeTo(device)

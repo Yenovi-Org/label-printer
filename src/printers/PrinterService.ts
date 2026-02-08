@@ -1,4 +1,7 @@
-import { UsbDevice, getDevices, requestDevice } from "@/helpers/USBUtils"
+import Device from "@/helpers/Device"
+import NetworkDevice from "@/helpers/NetworkDevice"
+import { getNetworkTargetsFromEnv } from "@/helpers/NetworkUtils"
+import { getDevices, requestDevice } from "@/helpers/USBUtils"
 import TSPLPrinter from "./TSPLPrinter"
 import Printer from "./Printer"
 
@@ -8,7 +11,7 @@ export class PrinterService {
      * @param device 
      * @returns 
      */
-    static async printerForDevice(device: UsbDevice): Promise<Printer|undefined> {
+    static async printerForDevice(device: Device): Promise<Printer|undefined> {
         const classes = [TSPLPrinter]
 
         for (const key in classes) {
@@ -24,11 +27,19 @@ export class PrinterService {
         return undefined
     }
 
+    private static async getNetworkDevices(): Promise<NetworkDevice[]> {
+        const targets = getNetworkTargetsFromEnv()
+        return targets.map(t => new NetworkDevice(t.host, t.port))
+    }
+
     /**
      * @returns List of available printers
      */
     static async getPrinters(): Promise<Printer[]> {
-        const devices = await getDevices()
+        const usbDevices = await getDevices()
+        const networkDevices = await PrinterService.getNetworkDevices()
+        const devices: Device[] = [...usbDevices, ...networkDevices]
+
         const optionalPrinters = await Promise.all(devices.map(PrinterService.printerForDevice))
         return optionalPrinters.filter(printer => !!printer) as Printer[]
     }
