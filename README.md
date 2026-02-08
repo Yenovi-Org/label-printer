@@ -78,15 +78,48 @@ await printer.display(label)
 await printer.close()
 ```
 
-### Direct network usage (Node.js)
+### Connect directly (bypass discovery)
 
-If you already know the printer IP and want to bypass discovery:
+If you already know how to reach your printer (network address or USB identifiers), you can create a printer instance directly.
+
+Auto-detect language (recommended default):
 
 ```ts
-import TSPLPrinter from "label-printer/dist/printers/TSPLPrinter"
-import NetworkDevice from "label-printer/dist/helpers/NetworkDevice"
+import { PrinterService } from "label-printer"
 
-const printer = new TSPLPrinter(new NetworkDevice("192.168.100.31", 9100))
+const printer = await PrinterService.connect({ network: { host: "192.168.100.31" } })
+if(!printer) throw new Error("Printer not found or not supported")
+```
+
+Explicit TSPL (when you know it's a TSPL printer):
+
+```ts
+import { PrinterService } from "label-printer"
+
+const printer = await PrinterService.connectTSPL({ network: { host: "192.168.100.31", port: 9100 } })
+if(!printer) throw new Error("Not a TSPL printer")
+```
+
+USB (Node.js - filter without a prompt):
+
+```ts
+import { PrinterService } from "label-printer"
+
+const printer = await PrinterService.connect({
+  usb: { vendorId: 0x1234, productId: 0x5678, serialNumber: "ABC" }
+})
+if(!printer) throw new Error("Printer not found or not supported")
+```
+
+USB (Browser - shows a picker; you can optionally filter by `vendorId` / `productId`):
+
+```ts
+import { PrinterService } from "label-printer"
+
+const printer = await PrinterService.connect({
+  usb: { vendorId: 0x1234, productId: 0x5678 }
+})
+if(!printer) throw new Error("No printer selected")
 ```
 
 ## Device abstraction
@@ -94,7 +127,7 @@ const printer = new TSPLPrinter(new NetworkDevice("192.168.100.31", 9100))
 Commands write to a transport-agnostic `Device` interface. This enables the same printer and label APIs to work over different transports.
 
 - **USB** device implementation is internal to `USBUtils`.
-- **NetworkDevice** is a TCP implementation used in Node.js.
+- **Network** support uses a TCP implementation in Node.js.
 
 ## Label layer
 

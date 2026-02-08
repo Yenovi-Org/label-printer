@@ -3,6 +3,11 @@ import StringUtils from "./StringUtils";
 const unsupportedUsbError = "usb-unsupported"
 const stringHelper = new StringUtils()
 
+ export type UsbRequestFilter = {
+     vendorId?: number
+     productId?: number
+ }
+
 let usbAgent: USB
 
 /**
@@ -53,6 +58,16 @@ export const requestDevice = async (): Promise<UsbDevice|undefined> => {
     }
 }
 
+ export const requestDeviceWithFilters = async (filters: UsbRequestFilter[] = []): Promise<UsbDevice|undefined> => {
+     const agent = await getUSB()
+     const device = await agent.requestDevice({ filters: filters as any })
+     if(device) {
+         return new UsbDevice(device)
+     } else {
+         return undefined
+     }
+ }
+
 /**
  * Convenience wrapper for a web usb device
  * Its main purpose is to hide the details of the usb library from client code so in case
@@ -64,6 +79,18 @@ export class UsbDevice {
     get opened() {
         return this.device.opened
     }
+
+     get vendorId(): number {
+         return this.device.vendorId
+     }
+
+     get productId(): number {
+         return this.device.productId
+     }
+
+     get serialNumber(): string|undefined {
+         return this.device.serialNumber
+     }
 
     /**
      * All available endpoints

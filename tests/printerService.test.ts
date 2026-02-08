@@ -8,6 +8,7 @@ jest.mock("@/helpers/USBUtils", () => {
         ...actual,
         getDevices: jest.fn(),
         requestDevice: jest.fn(),
+        requestDeviceWithFilters: jest.fn(),
     }
 })
 
