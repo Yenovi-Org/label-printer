@@ -1,4 +1,4 @@
-import Printer from "@/printers/Printer"
+import Printer, { PrinterStatus } from "@/printers/Printer"
 import { Label } from "@/labels"
 import Command from "@/commands/Command"
 import Printable from "@/labels/Printable"
@@ -16,6 +16,14 @@ class DummyPrinter extends Printer {
 
     async feedLabel(): Promise<void> {
         return
+    }
+
+    async getModelname(): Promise<string> {
+        return "Dummy"
+    }
+
+    async getStatus(): Promise<PrinterStatus> {
+        return "normal"
     }
 }
 

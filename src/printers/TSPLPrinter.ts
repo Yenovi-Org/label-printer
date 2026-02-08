@@ -1,6 +1,6 @@
 import { TSPLRawCommand } from "@/commands/tspl";
 import { PrinterLanguage } from "@/commands"
-import Printer from "./Printer";
+import Printer, { PrinterStatus } from "./Printer";
 import Device from "@/helpers/Device";
 import NetworkDevice from "@/helpers/NetworkDevice";
 import { discoverBonjourServices } from "@/helpers/BonjourUtils";
@@ -13,6 +13,48 @@ export default class TSPLPrinter extends Printer {
     async feedLabel(): Promise<void> {
         const feedCommand = new TSPLRawCommand("FORMFEED")
         await this.writeCommand(feedCommand)
+    }
+
+    async getModelname(): Promise<string> {
+        if(!this.device.opened) await this.device.openAndConfigure()
+        const command = new TSPLRawCommand("~!T")
+        await command.writeTo(this.device)
+
+        const response = await this.device.readString(256)
+        return (response ?? "").trim()
+    }
+
+    async getStatus(): Promise<PrinterStatus> {
+        if(!this.device.opened) await this.device.openAndConfigure()
+
+        await this.device.writeData(new Uint8Array([0x1b, 0x21, 0x3f, 0x0a]))
+
+        const data = await this.device.readData(1)
+        const raw = data ? data.getUint8(0) : 0x80
+
+        return TSPLPrinter.statusFor(raw)
+    }
+
+    private static statusFor(code: number): PrinterStatus {
+        const map: Record<number, PrinterStatus> = {
+            0x00: "normal",
+            0x01: "head_opened",
+            0x02: "paper_jam",
+            0x03: "paper_jam_head_opened",
+            0x04: "out_of_paper",
+            0x05: "out_of_paper_head_opened",
+            0x08: "out_of_ribbon",
+            0x09: "out_of_ribbon_head_opened",
+            0x0A: "out_of_ribbon_paper_jam",
+            0x0B: "out_of_ribbon_paper_jam_head_opened",
+            0x0C: "out_of_ribbon_out_of_paper",
+            0x0D: "out_of_ribbon_out_of_paper_head_opened",
+            0x10: "paused",
+            0x20: "printing",
+            0x80: "other_error",
+        }
+
+        return map[code] ?? "other_error"
     }
 
     static async try(device: Device): Promise<boolean> {

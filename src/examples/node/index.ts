@@ -3,8 +3,8 @@ import { Label } from "@/labels"
 // import classicExample from "./exampleCases/classicExample"
 // import tableExample from "./exampleCases/tableExample"
 import svgExample from "./exampleCases/imageTypesExample"
-// import TSPLPrinter from "@/printers/TSPLPrinter";
-// import NetworkDevice from "@/helpers/NetworkDevice";
+import TSPLPrinter from "@/printers/TSPLPrinter";
+import NetworkDevice from "@/helpers/NetworkDevice";
 
 function sleep(ms: number) {
     return new Promise((resolve) => setTimeout(resolve, ms));
@@ -12,10 +12,10 @@ function sleep(ms: number) {
 
 export default async () => {
     const displayOverPrint = true
+    const monitorPrinter = false
     const printers = await PrinterService.getPrinters()
     
     if(printers.length > 0) {
-    // const printer = new TSPLPrinter(new NetworkDevice("192.168.100.31", 9100))
         const printer = printers[0]
 
         // const label = await classicExample()
@@ -31,6 +31,18 @@ export default async () => {
                 await printer.print(label, 1, 3)
             }
         }
+
         await printer.close()
+    }
+
+    if (monitorPrinter) {
+        const printer = new TSPLPrinter(new NetworkDevice("192.168.100.31", 9100))
+
+        while(true) {
+            const model = await printer.getModelname()
+            const status = await printer.getStatus()
+            console.log(`[${new Date().toISOString()}] ${model} - ${status}`)
+            await sleep(5000)
+        }
     }
 }

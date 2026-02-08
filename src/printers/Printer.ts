@@ -3,11 +3,28 @@ import { LabelDirection } from "@/commands/tspl";
 import Device from "@/helpers/Device";
 import { Label } from "@/labels"
 
+export type PrinterStatus =
+    | "normal"
+    | "head_opened"
+    | "paper_jam"
+    | "paper_jam_head_opened"
+    | "out_of_paper"
+    | "out_of_paper_head_opened"
+    | "out_of_ribbon"
+    | "out_of_ribbon_head_opened"
+    | "out_of_ribbon_paper_jam"
+    | "out_of_ribbon_paper_jam_head_opened"
+    | "out_of_ribbon_out_of_paper"
+    | "out_of_ribbon_out_of_paper_head_opened"
+    | "paused"
+    | "printing"
+    | "other_error"
+
 /**
  * Base class that encapsulates functionality of all printers
  */
 export default abstract class Printer {
-    private readonly device: Device
+    protected readonly device: Device
 
     /**
      * Printer language used by the type of printer the subclass represents
@@ -18,6 +35,10 @@ export default abstract class Printer {
      * When called, it will feed the labels to the beginig of the next label
      */
     abstract feedLabel(): Promise<void>
+
+    abstract getModelname(): Promise<string>
+
+    abstract getStatus(): Promise<PrinterStatus>
 
     constructor(device: Device) {
         this.device = device
