@@ -1,5 +1,11 @@
 # label-printer
 
+## 0.6.0
+
+### Minor Changes
+
+- 380498a: Support for SVG
+
 ## 0.5.4
 
 ### Patch Changes
