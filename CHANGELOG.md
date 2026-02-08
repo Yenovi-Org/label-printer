@@ -1,5 +1,11 @@
 # label-printer
 
+## 0.7.1
+
+### Patch Changes
+
+- ef5e9d2: Added status and model getter
+
 ## 0.7.0
 
 ### Minor Changes
