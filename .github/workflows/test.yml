@@ -1,8 +1,12 @@
 name: Test
-on: 
+on:
   pull_request:
-    branches-ignore:
+    branches:
       - main
+  push:
+    branches:
+      - main
+  workflow_dispatch:
 jobs:
     test:
         runs-on: ubuntu-latest
