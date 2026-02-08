@@ -1,5 +1,11 @@
 # label-printer
 
+## 0.7.2
+
+### Patch Changes
+
+- f22cd5b: Expose direct connection methods
+
 ## 0.7.1
 
 ### Patch Changes
