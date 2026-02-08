@@ -277,7 +277,13 @@ print/display command sequences.
 - **`Printer`**
   - `print(label, sets, gap, copiesPerSet?, direction?, mirror?, gapOffset?)`
   - `display(label, direction?, mirror?)`
+  - `getModelname()`
+  - `getStatus()`
   - `close()`
+
+- **`PrinterStatus`**
+  - String union of possible status values returned by `printer.getStatus()`.
+  - Access via `printers.PrinterStatus`.
 
 ## Notes
 
@@ -343,6 +349,4 @@ Font notes:
 - Make changes on feature branch.
 - Run `pnpm changeset` on feature branch to create change.
 - Merge feature branch into main.
-- Run `pnpm changeset version` on main to create an update with all the versions. 
-- PR is automatically created on push, merge it to trigger publish
-- Note: If there are unpublished changes on main and the release fails, it will be run again on the next push to main, no need to start again from the first step
+- Changeset will create a PR, merge it to trigger publish
