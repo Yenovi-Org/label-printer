@@ -9,13 +9,14 @@ export class ImageProcessor {
   /**
    * Get pixel information about an image
    * @param image Image to process (local file path, remote URL, data URL, or Blob)
+   * @param target Optional target raster size. Useful for vector inputs (e.g. SVG) to rasterize at the final size.
    * @returns Promise with image data including width, height, pixel data, and bits per pixel
    */
-  static async getImageData(image: string | Blob): Promise<ImageData> {
+  static async getImageData(image: string | Blob, target?: { width: number; height: number }): Promise<ImageData> {
     if (typeof window !== 'undefined') {
-      return this.getImageDataBrowser(image);
+      return this.getImageDataBrowser(image, target);
     } else {
-      return this.getImageDataNode(image);
+      return this.getImageDataNode(image, target);
     }
   }
 
@@ -24,58 +25,57 @@ export class ImageProcessor {
   /**
    * Get pixel information about an image in browser environment
    * @param image Image to process
+   * @param target Optional target raster size.
    * @returns Promise with image data
    */
-  private static async getImageDataBrowser(image: string | Blob): Promise<ImageData> {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      
-      img.onload = () => {
-        try {
-          const canvas = document.createElement('canvas');
-          const ctx = canvas.getContext('2d');
-          
-          if (!ctx) {
-            reject(new Error('Could not get canvas context'));
-            return;
-          }
-          
-          canvas.width = img.width;
-          canvas.height = img.height;
-          
-          ctx.drawImage(img, 0, 0);
-          const imageData = ctx.getImageData(0, 0, img.width, img.height);
-          
-          resolve({
-            data: new Uint8Array(imageData.data),
-            width: img.width,
-            height: img.height,
-            bitsPerPixel: 4 // RGBA
-          });
-        } catch (error) {
-          reject(error);
-        }
-      };
-      
-      img.onerror = () => reject(new Error('Failed to load image'));
-      
-      if (typeof image === 'string') {
-        img.src = image;
-      } else {
-        const url = URL.createObjectURL(image);
-        img.onload = () => {
-          URL.revokeObjectURL(url);
-          resolve({
-            data: new Uint8Array(0), // Will be set by the actual onload
-            width: 0,
-            height: 0,
-            bitsPerPixel: 4
-          });
-        };
-        img.src = url;
+  private static async getImageDataBrowser(image: string | Blob, target?: { width: number; height: number }): Promise<ImageData> {
+    const loadImage = (src: string): Promise<HTMLImageElement> => {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => resolve(img);
+        img.onerror = () => reject(new Error('Failed to load image'));
+        img.src = src;
+      });
+    }
+
+    let src: string
+    let revokeUrl: string | undefined
+
+    if (typeof image === 'string') {
+      src = this.normalizePotentialSVGSource(image)
+    } else {
+      revokeUrl = URL.createObjectURL(image)
+      src = revokeUrl
+    }
+
+    try {
+      const img = await loadImage(src)
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+
+      if (!ctx) {
+        throw new Error('Could not get canvas context')
       }
-    });
+
+      const width = target?.width ?? img.width
+      const height = target?.height ?? img.height
+
+      canvas.width = width;
+      canvas.height = height;
+
+      ctx.drawImage(img, 0, 0, width, height);
+      const imageData = ctx.getImageData(0, 0, width, height);
+
+      return {
+        data: new Uint8Array(imageData.data),
+        width,
+        height,
+        bitsPerPixel: 4,
+      }
+    } finally {
+      if (revokeUrl) URL.revokeObjectURL(revokeUrl)
+    }
   }
 
   /******** NODEJS ********/
@@ -83,22 +83,28 @@ export class ImageProcessor {
   /**
    * Get pixel information about an image in Node.js environment
    * @param image Image to process
+   * @param target Optional target raster size.
    * @returns Promise with image data
    */
-  private static async getImageDataNode(image: string | Blob): Promise<ImageData> {
+  private static async getImageDataNode(image: string | Blob, _target?: { width: number; height: number }): Promise<ImageData> {
     console.log('Processing image in Node.js environment');
     // For Node.js, we'll use a simple approach with built-in modules
     if (image instanceof Blob) {
       throw new Error('Blob input not supported in Node.js environment. Use file path or data URL instead.');
     }
+
+    const trimmed = image.trim()
+    if (trimmed.startsWith('<svg')) {
+      return this.rasterizeSVGNode(trimmed, _target)
+    }
     
     // Check if it's a data URL
     if (image.startsWith('data:')) {
-      return this.getImageFromData(image);
+      return this.getImageFromData(image, _target);
     } else if (image.startsWith('http://') || image.startsWith('https://')) {
-      return this.getImageFromUrl(image);
+      return this.getImageFromUrl(image, _target);
     } else {
-      return this.getImageFromFile(image);
+      return this.getImageFromFile(image, _target);
     }
   }
 
@@ -107,7 +113,7 @@ export class ImageProcessor {
    * @param dataURL Data URL string
    * @returns Promise with image data
    */
-  private static async getImageFromData(dataURL: string): Promise<ImageData> {
+  private static async getImageFromData(dataURL: string, target?: { width: number; height: number }): Promise<ImageData> {
     const [header, data] = dataURL.split(',');
     const mimeType = header.match(/data:([^;]+)/)?.[1];
     
@@ -115,8 +121,16 @@ export class ImageProcessor {
       throw new Error('Invalid image data URL');
     }
     
-    const buffer = Buffer.from(data, 'base64');
     const extension = mimeType.split('/')[1].toLowerCase();
+    if (extension === 'svg+xml' || mimeType === 'image/svg+xml') {
+      const isBase64 = header.includes(';base64')
+      const svgText = isBase64
+        ? Buffer.from(data, 'base64').toString('utf8')
+        : decodeURIComponent(data)
+      return this.rasterizeSVGNode(svgText, target)
+    }
+
+    const buffer = Buffer.from(data, 'base64');
     return this.parse(buffer, extension);
   }
 
@@ -125,7 +139,7 @@ export class ImageProcessor {
    * @param image 
    * @returns 
    */
-  private static async getImageFromFile(image: string): Promise<ImageData> {
+  private static async getImageFromFile(image: string, target?: { width: number; height: number }): Promise<ImageData> {
     const fs = await eval("require")('fs');
     const path = await eval("require")('path');
     
@@ -135,7 +149,12 @@ export class ImageProcessor {
     
     const buffer = fs.readFileSync(image);
     const ext = path.extname(image).toLowerCase();
-    
+
+    if (ext === '.svg') {
+      const svgText = buffer.toString('utf8')
+      return this.rasterizeSVGNode(svgText, target)
+    }
+
     return this.parse(buffer, ext);
   }
 
@@ -144,7 +163,7 @@ export class ImageProcessor {
    * @param url Remote image URL
    * @returns Promise with image data
    */
-  private static async getImageFromUrl(url: string): Promise<ImageData> {
+  private static async getImageFromUrl(url: string, target?: { width: number; height: number }): Promise<ImageData> {
     // Use dynamic import to support both Node.js versions
     let fetch: any;
     try {
@@ -152,11 +171,11 @@ export class ImageProcessor {
       fetch = globalThis.fetch;
     } catch {
       // Use https module as fallback
-      return this.fetchWithHttps(url);
+      return this.fetchWithHttps(url, target);
     }
 
     if (!fetch) {
-      return this.fetchWithHttps(url);
+      return this.fetchWithHttps(url, target);
     }
 
     const response = await fetch(url);
@@ -170,7 +189,12 @@ export class ImageProcessor {
     // Determine image type from content or URL
     const contentType = response.headers.get('content-type');
     const imageType = this.getImageType(contentType || '', url);
-    
+
+    if (imageType === 'svg') {
+      const svgText = buffer.toString('utf8')
+      return this.rasterizeSVGNode(svgText, target)
+    }
+
     return this.parse(buffer, imageType);
   }
 
@@ -179,7 +203,7 @@ export class ImageProcessor {
    * @param url Remote image URL
    * @returns Promise with image data
    */
-  private static async fetchWithHttps(url: string): Promise<ImageData> {
+  private static async fetchWithHttps(url: string, target?: { width: number; height: number }): Promise<ImageData> {
     const https = await eval("require")('https');
     const http = await eval("require")('http');
     
@@ -205,9 +229,14 @@ export class ImageProcessor {
             // Determine image type from content-type header or URL
             const contentType = response.headers['content-type'] || '';
             const imageType = this.getImageType(contentType || '', url);
-            
-            const data = this.parse(buffer, imageType);
-            resolve(data)
+
+            if (imageType === 'svg') {
+              const svgText = buffer.toString('utf8')
+              resolve(this.rasterizeSVGNode(svgText, target))
+              return
+            }
+
+            resolve(this.parse(buffer, imageType))
           } catch (error) {
             reject(error);
           }
@@ -238,6 +267,8 @@ export class ImageProcessor {
         return 'png';
       } else if (contentType.includes('jpeg') || contentType.includes('jpg')) {
         return 'jpeg';
+      } else if (contentType.includes('svg')) {
+        return 'svg';
       }
     }
     
@@ -246,35 +277,77 @@ export class ImageProcessor {
       return 'png';
     } else if (urlLower.includes('.jpg') || urlLower.includes('.jpeg')) {
       return 'jpeg';
+    } else if (urlLower.includes('.svg')) {
+      return 'svg';
     }
 
     return ""
   }
 
-   /**
-   * 
-   * @param buffer 
-   * @param extension 
-   * @returns 
+  /**
+   * Parse image data by extension
    */
   private static parse(buffer: Buffer, extension: string): ImageData {
-    console.log(`Parsing image with extension: ${extension}`);
-    if (extension === 'png') {
+    const normalizedExtension = extension.startsWith(".") ? extension.slice(1) : extension
+    console.log(`Parsing image with extension: ${normalizedExtension}`);
+
+    if (normalizedExtension === 'png') {
       return parsePNG(buffer);
-    } else if (extension === 'jpeg' || extension === 'jpg') {
+    } else if (normalizedExtension === 'jpeg' || normalizedExtension === 'jpg') {
       return this.parseJPEG(buffer);
+    } else if (normalizedExtension === 'svg') {
+      // Note: In Node we don't reach this when loading SVG through the high-level APIs because we route
+      // SVG through rasterizeSVGNode() first. Keeping this as a guard.
+      throw new Error('svg-not-supported-in-node')
     } else {
-      throw new Error(`Unsupported image format: ${extension}. Supported formats: PNG, JPEG`);
+      throw new Error(`Unsupported image format: ${normalizedExtension}. Supported formats: PNG, JPEG`);
     }
   }
 
-  /**
-   * JPEG parser that creates a meaningful placeholder image
-   * Note: Full JPEG decoding requires complex DCT and Huffman decoding.
-   * This creates a gradient pattern based on the image dimensions.
-   * @param buffer JPEG file buffer
-   * @returns Image data
-   */
+  private static rasterizeSVGNode(svg: string, target?: { width: number; height: number }): ImageData {
+    // TODO: This is Node-only. For best browser-safety this likely benefits from conditional exports so
+    // browser bundlers don't attempt to include @resvg/resvg-js.
+    let Resvg: any
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      Resvg = eval("require")("@resvg/resvg-js").Resvg
+    } catch (_e) {
+      throw new Error('svg-rasterizer-missing')
+    }
+
+    const fitTo = target
+      ? { mode: 'width' as const, value: target.width }
+      : undefined
+
+    const resvg = new Resvg(svg, {
+      fitTo,
+    })
+
+    const pngData: Uint8Array = resvg.render().asPng()
+    const pngBuffer = Buffer.from(pngData)
+    const imageData = parsePNG(pngBuffer)
+
+    if (target && (imageData.width !== target.width || imageData.height !== target.height)) {
+      return this.resize(imageData, target.width, target.height)
+    }
+
+    return imageData
+  }
+
+  private static normalizePotentialSVGSource(source: string): string {
+    const trimmed = source.trim()
+    const isInlineSvg = trimmed.startsWith('<svg')
+    const isSvgDataUrl = trimmed.startsWith('data:image/svg+xml')
+
+    if (isInlineSvg) {
+      const encoded = encodeURIComponent(trimmed)
+      return `data:image/svg+xml;charset=utf-8,${encoded}`
+    }
+
+    if (isSvgDataUrl) return source
+    return source
+  }
+
   private static parseJPEG(buffer: Buffer): ImageData {
     // JPEG signature check
     if (buffer[0] !== 0xFF || buffer[1] !== 0xD8) {
