@@ -1,4 +1,4 @@
-import { UsbDevice } from "@/helpers/USBUtils"
+import Device from "@/helpers/Device"
 
 /**
  * Base implementation for all types of command
@@ -15,10 +15,10 @@ export default abstract class Command {
     }
 
     /**
-     * Write the command data to a USB device
+     * Write the command data to a device
      * @param device Device to write to
      */
-    async write(device: UsbDevice): Promise<void> {
+    async writeTo(device: Device): Promise<void> {
         await this.writeString(this.commandString, device)
         await this.terminateCommand(device)
     }
@@ -35,7 +35,7 @@ export default abstract class Command {
      * @param data String representation of data
      * @param device Device to write to
      */
-    protected async writeString(data: string, device: UsbDevice): Promise<void> {
+    protected async writeString(data: string, device: Device): Promise<void> {
         await device.writeString(data)
     }
 
@@ -44,7 +44,7 @@ export default abstract class Command {
      * @param data Byte array to send
      * @param device Device to write to
      */
-    protected async writeBytes(data: Uint8Array|ArrayBuffer, device: UsbDevice): Promise<void> {
+    protected async writeBytes(data: Uint8Array|ArrayBuffer, device: Device): Promise<void> {
         await device.writeData(data)
     }
 
@@ -52,7 +52,7 @@ export default abstract class Command {
      * Write the command terminator to the device
      * @param device 
      */
-    protected async terminateCommand(device: UsbDevice): Promise<void> {
+    protected async terminateCommand(device: Device): Promise<void> {
         await this.writeBytes(this.commandTerminatorBytes, device)
     }
 }

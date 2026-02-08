@@ -57,7 +57,7 @@ test("TSPLBitmapCommand writes header + bytes + terminator and supports mode val
     }
 
     const device = new UsbDevice(MockUSBDevice)
-    await cmd.write(device)
+    await cmd.writeTo(device)
 
     expect(writes.length).toBe(3)
     expect(writes[1]).toEqual(new Uint8Array([0x41, 0x42, 0x43]))

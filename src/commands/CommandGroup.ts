@@ -1,4 +1,4 @@
-import { UsbDevice } from "@/helpers/USBUtils";
+import Device from "@/helpers/Device";
 import Command from "./Command";
 
 /**
@@ -20,9 +20,9 @@ export default abstract class CommandGroup<T extends Command> extends Command {
         }
     }
 
-    async write(device: UsbDevice): Promise<void> {
+    async writeTo(device: Device): Promise<void> {
         for (let commandIndex in this.commands) {
-            await this.commands[commandIndex].write(device)
+            await this.commands[commandIndex].writeTo(device)
         }
     }
 

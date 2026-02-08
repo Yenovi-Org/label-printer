@@ -23,5 +23,5 @@ test("Test command write", () => {
     })
 
     const device = new UsbDevice(MockUSBDevice)
-    printCommand.write(device)
+    printCommand.writeTo(device)
 })

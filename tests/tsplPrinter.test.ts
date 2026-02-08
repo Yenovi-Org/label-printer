@@ -8,7 +8,7 @@ jest.mock("@/commands/tspl", () => {
         TSPLRawCommand: jest.fn().mockImplementation((body: string) => {
             return {
                 commandString: body,
-                write: jest.fn().mockResolvedValue(undefined),
+                writeTo: jest.fn().mockResolvedValue(undefined),
             }
         })
     }

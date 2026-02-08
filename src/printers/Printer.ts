@@ -1,13 +1,13 @@
 import { Command, PrinterLanguage } from "@/commands";
 import { LabelDirection } from "@/commands/tspl";
-import { UsbDevice } from "@/helpers/USBUtils";
+import Device from "@/helpers/Device";
 import { Label } from "@/labels"
 
 /**
  * Base class that encapsulates functionality of all printers
  */
 export default abstract class Printer {
-    private readonly usbDevice: UsbDevice
+    private readonly device: Device
 
     /**
      * Printer language used by the type of printer the subclass represents
@@ -19,15 +19,15 @@ export default abstract class Printer {
      */
     abstract feedLabel(): Promise<void>
 
-    constructor(device: UsbDevice) {
-        this.usbDevice = device
+    constructor(device: Device) {
+        this.device = device
     }
 
     /**
      * Close the printer USB
      */
     async close() {
-        await this.usbDevice.close()
+        await this.device.close()
     }
 
     /**
@@ -59,15 +59,15 @@ export default abstract class Printer {
      * @param command Command to send to the usb
      */
     async writeCommand(command: Command): Promise<void> {
-        if(!this.usbDevice.opened) await this.usbDevice.openAndConfigure()
-        await command.write(this.usbDevice)
+        if(!this.device.opened) await this.device.openAndConfigure()
+        await command.writeTo(this.device)
     }
 
     /**
      * Check if the device is indeed a printer
      * @param device 
      */
-    static try(_device: UsbDevice): Promise<boolean> {
+    static try(_device: Device): Promise<boolean> {
         throw new Error("try(device:) should be implemented")
     }
 }

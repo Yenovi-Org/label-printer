@@ -1,4 +1,5 @@
-import { UsbDevice, getDevices, requestDevice } from "@/helpers/USBUtils"
+import Device from "@/helpers/Device"
+import { getDevices, requestDevice } from "@/helpers/USBUtils"
 import TSPLPrinter from "./TSPLPrinter"
 import Printer from "./Printer"
 
@@ -8,7 +9,7 @@ export class PrinterService {
      * @param device 
      * @returns 
      */
-    static async printerForDevice(device: UsbDevice): Promise<Printer|undefined> {
+    static async printerForDevice(device: Device): Promise<Printer|undefined> {
         const classes = [TSPLPrinter]
 
         for (const key in classes) {
@@ -25,10 +26,40 @@ export class PrinterService {
     }
 
     /**
+     * Discover devices using printer-specific discovery hooks.
+     *
+     * Each printer class may optionally implement `static discoverDevices(): Promise<Device[]>`
+     * to find candidates over non-USB transports.
+     *
+     * Candidates returned here are still verified by `printerForDevice` via the printer
+     * class' `try(device)` method.
+     */
+    private static async discoverDevices(): Promise<Device[]> {
+        const classes = [TSPLPrinter]
+
+        const discoveryResults = await Promise.all(classes.map(async (cls) => {
+            const discoverer = (cls as any).discoverDevices
+            if(typeof discoverer === "function") {
+                try {
+                    return await discoverer.call(cls)
+                } catch (_e) {
+                    return []
+                }
+            }
+            return []
+        }))
+
+        return discoveryResults.flat()
+    }
+
+    /**
      * @returns List of available printers
      */
     static async getPrinters(): Promise<Printer[]> {
-        const devices = await getDevices()
+        const usbDevices = await getDevices()
+        const discoveredDevices = await PrinterService.discoverDevices()
+        const devices: Device[] = [...usbDevices, ...discoveredDevices]
+
         const optionalPrinters = await Promise.all(devices.map(PrinterService.printerForDevice))
         return optionalPrinters.filter(printer => !!printer) as Printer[]
     }

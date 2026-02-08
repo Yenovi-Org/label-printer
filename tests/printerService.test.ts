@@ -19,6 +19,8 @@ test("getPrinters skips devices that throw during probing", async () => {
         { deviceId: "good" } as any,
     ])
 
+    jest.spyOn(TSPLPrinter as any, "discoverDevices").mockResolvedValue([])
+
     jest.spyOn(TSPLPrinter, "try").mockImplementation(async (device: any) => {
         if(device.deviceId == "bad") {
             throw new Error("usb-no-out-endpoint")
@@ -30,4 +32,5 @@ test("getPrinters skips devices that throw during probing", async () => {
     expect(printers.length).toBe(1)
 
     ;(TSPLPrinter.try as unknown as jest.Mock).mockRestore?.()
+    ;((TSPLPrinter as any).discoverDevices as unknown as jest.Mock).mockRestore?.()
 })

@@ -76,7 +76,7 @@ test("TSPLDownload writes header + bytes + terminator", async () => {
     }
 
     const device = new UsbDevice(MockUSBDevice)
-    await cmd.write(device)
+    await cmd.writeTo(device)
 
     // Header is written via writeString, which ends up as writeData with UTF-8 bytes
     // and terminator (LF) at the end.

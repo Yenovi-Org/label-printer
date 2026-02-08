@@ -39,6 +39,7 @@
     "fontkit": "^2.0.4",
     "node-html-parser": "^6.1.13",
     "@resvg/resvg-js": "^2.6.2",
+    "bonjour": "^3.5.0",
     "usb": "^2.15.0"
   }
 }

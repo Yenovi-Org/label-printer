@@ -3,6 +3,8 @@ import { Label } from "@/labels"
 // import classicExample from "./exampleCases/classicExample"
 // import tableExample from "./exampleCases/tableExample"
 import svgExample from "./exampleCases/imageTypesExample"
+// import TSPLPrinter from "@/printers/TSPLPrinter";
+// import NetworkDevice from "@/helpers/NetworkDevice";
 
 function sleep(ms: number) {
     return new Promise((resolve) => setTimeout(resolve, ms));
@@ -13,6 +15,7 @@ export default async () => {
     const printers = await PrinterService.getPrinters()
     
     if(printers.length > 0) {
+    // const printer = new TSPLPrinter(new NetworkDevice("192.168.100.31", 9100))
         const printer = printers[0]
 
         // const label = await classicExample()
