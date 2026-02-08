@@ -1,5 +1,11 @@
 # label-printer
 
+## 0.7.3
+
+### Patch Changes
+
+- 8092fb6: testing
+
 ## 0.7.2
 
 ### Patch Changes
