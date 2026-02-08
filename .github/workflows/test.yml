@@ -28,6 +28,7 @@ jobs:
       - run: pnpm install
       - run: pnpm test --coverage
       - name: Add summary
+        id: add-summary
         run: |
           echo "## Test results" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ Unit tests: passed" >> $GITHUB_STEP_SUMMARY
