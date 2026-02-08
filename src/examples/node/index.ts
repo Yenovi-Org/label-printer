@@ -12,10 +12,10 @@ function sleep(ms: number) {
 
 export default async () => {
     const displayOverPrint = true
-    const monitorPrinter = false
+    const monitorPrinter = true
     const printers = await PrinterService.getPrinters()
     
-    if(printers.length > 0) {
+    if(!monitorPrinter && printers.length > 0) {
         const printer = printers[0]
 
         // const label = await classicExample()
@@ -36,6 +36,7 @@ export default async () => {
     }
 
     if (monitorPrinter) {
+        console.log("Monitoring printer")
         const printer = new TSPLPrinter(new NetworkDevice("192.168.100.31", 9100))
 
         while(true) {
