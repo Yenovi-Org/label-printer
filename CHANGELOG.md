@@ -1,5 +1,11 @@
 # label-printer
 
+## 0.7.5
+
+### Patch Changes
+
+- 91bd0d9: Expose raw string printing method
+
 ## 0.7.4
 
 ### Patch Changes
