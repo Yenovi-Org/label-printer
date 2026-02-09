@@ -85,6 +85,15 @@ export default abstract class Printer {
     }
 
     /**
+     * Writes a raw string to the printer
+     * @param text String to send to the printer
+     */
+    async writeRawString(text: string): Promise<void> {
+        if(!this.device.opened) await this.device.openAndConfigure()
+        await this.device.writeString(text)
+    }
+
+    /**
      * Check if the device is indeed a printer
      * @param device 
      */

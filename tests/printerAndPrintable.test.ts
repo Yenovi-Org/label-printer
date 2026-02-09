@@ -72,6 +72,25 @@ test("Printer.writeCommand opens device if not opened", async () => {
     expect(openAndConfigure).toHaveBeenCalled()
 })
 
+test("Printer.writeRawString opens device if not opened and delegates to writeString", async () => {
+    const openAndConfigure = jest.fn().mockResolvedValue(undefined)
+    const writeString = jest.fn().mockResolvedValue(undefined)
+
+    const fakeDevice: any = {
+        opened: false,
+        openAndConfigure,
+        writeString,
+        writeData: jest.fn(),
+        close: jest.fn(),
+    }
+
+    const printer = new DummyPrinter(fakeDevice)
+    await printer.writeRawString("RAW")
+
+    expect(openAndConfigure).toHaveBeenCalled()
+    expect(writeString).toHaveBeenCalledWith("RAW")
+})
+
 test("Printer.print calls label.fullPrintCommand", async () => {
     const fakeDevice: any = {
         opened: true,

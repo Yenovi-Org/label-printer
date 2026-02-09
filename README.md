@@ -279,6 +279,7 @@ print/display command sequences.
   - `display(label, direction?, mirror?)`
   - `getModelname()`
   - `getStatus()`
+  - `writeRawString(text)`
   - `close()`
 
 - **`PrinterStatus`**
