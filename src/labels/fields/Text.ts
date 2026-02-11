@@ -22,6 +22,7 @@ const ITALIC_TAG = "i"
 const UNDERLINE_TAG = "u"
 const STRIKE_TAG = ["s", "del", "strike"]
 const PARAGRAPH_TAG = "p"
+const BREAK_TAG = "br"
 
 /**
  * Presents a piece of text on the label
@@ -144,6 +145,14 @@ export default class Text extends LabelField {
             const elementNode = rootNode as HTMLElement
             const tag = elementNode.rawTagName
 
+            if(tag == BREAK_TAG) {
+                return {
+                    x: this.x,
+                    y: initialY + font.size + this.lineSpacing,
+                    command: this.context!.generator.commandGroup([])
+                }
+            }
+
             let commands: Command[] = []
             let currentX = initialX
             let currentY = initialY
@@ -179,8 +188,25 @@ export default class Text extends LabelField {
             })
 
             if(tag == PARAGRAPH_TAG) {
-                currentX = this.x
-                currentY += baseFont.size + this.lineSpacing
+                let paragraphEndsWithBreak = false
+                for(let i = elementNode.childNodes.length - 1; i >= 0; i--) {
+                    const node = elementNode.childNodes[i]
+                    if(node.nodeType == NodeType.TEXT_NODE) {
+                        if(node.innerText.trim() == "") continue
+                        break
+                    }
+
+                    const childElement = node as HTMLElement
+                    if(childElement.rawTagName == BREAK_TAG) {
+                        paragraphEndsWithBreak = true
+                    }
+                    break
+                }
+
+                if(!paragraphEndsWithBreak) {
+                    currentX = this.x
+                    currentY += baseFont.size + this.lineSpacing
+                }
             }
 
             return {
