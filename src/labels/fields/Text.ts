@@ -20,7 +20,7 @@ const BOLD_WEIGTH = 700
 const BOLD_TAG = "b"
 const ITALIC_TAG = "i"
 const UNDERLINE_TAG = "u"
-const STRIKE_TAG = "s"
+const STRIKE_TAG = ["s", "del", "strike"]
 
 /**
  * Presents a piece of text on the label
@@ -152,7 +152,7 @@ export default class Text extends LabelField {
             
             if(tag == UNDERLINE_TAG) {
                 baseFeatures.push("underline")
-            } else if(tag == STRIKE_TAG) {
+            } else if(STRIKE_TAG.includes(tag)) {
                 baseFeatures.push("strike")
             } else if(tag == BOLD_TAG) {
                 baseFont.weight = BOLD_WEIGTH
