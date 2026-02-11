@@ -21,6 +21,8 @@ const BOLD_TAG = "b"
 const ITALIC_TAG = "i"
 const UNDERLINE_TAG = "u"
 const STRIKE_TAG = ["s", "del", "strike"]
+const PARAGRAPH_TAG = "p"
+const BREAK_TAG = "br"
 
 /**
  * Presents a piece of text on the label
@@ -143,6 +145,14 @@ export default class Text extends LabelField {
             const elementNode = rootNode as HTMLElement
             const tag = elementNode.rawTagName
 
+            if(tag == BREAK_TAG) {
+                return {
+                    x: this.x,
+                    y: initialY + font.size + this.lineSpacing,
+                    command: this.context!.generator.commandGroup([])
+                }
+            }
+
             let commands: Command[] = []
             let currentX = initialX
             let currentY = initialY
@@ -160,12 +170,44 @@ export default class Text extends LabelField {
                 baseFont.style = "italic"
             }
 
+            // Treat paragraphs as block-level elements: start and end on a new line.
+            // Avoid adding an extra leading newline if the paragraph starts at the field origin.
+            if(tag == PARAGRAPH_TAG) {
+                const isAtFieldOrigin = initialX == this.x && initialY == this.y
+                if(!isAtFieldOrigin) {
+                    currentX = this.x
+                    currentY = initialY + baseFont.size + this.lineSpacing
+                }
+            }
+
             elementNode.childNodes.forEach(node => {
                 const {x,y,command} = this.generateFormattedRecursive(currentX, currentY, node, baseFont, baseFeatures)
                 currentX = x
                 currentY = y
                 commands.push(command)
             })
+
+            if(tag == PARAGRAPH_TAG) {
+                let paragraphEndsWithBreak = false
+                for(let i = elementNode.childNodes.length - 1; i >= 0; i--) {
+                    const node = elementNode.childNodes[i]
+                    if(node.nodeType == NodeType.TEXT_NODE) {
+                        if(node.innerText.trim() == "") continue
+                        break
+                    }
+
+                    const childElement = node as HTMLElement
+                    if(childElement.rawTagName == BREAK_TAG) {
+                        paragraphEndsWithBreak = true
+                    }
+                    break
+                }
+
+                if(!paragraphEndsWithBreak) {
+                    currentX = this.x
+                    currentY += baseFont.size + this.lineSpacing
+                }
+            }
 
             return {
                 x: currentX,
