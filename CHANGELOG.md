@@ -1,5 +1,11 @@
 # label-printer
 
+## 0.7.6
+
+### Patch Changes
+
+- 5833a0a: Improved rich editor + fix image conversion
+
 ## 0.7.5
 
 ### Patch Changes
