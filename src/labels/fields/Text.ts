@@ -21,6 +21,7 @@ const BOLD_TAG = "b"
 const ITALIC_TAG = "i"
 const UNDERLINE_TAG = "u"
 const STRIKE_TAG = ["s", "del", "strike"]
+const PARAGRAPH_TAG = "p"
 
 /**
  * Presents a piece of text on the label
@@ -160,12 +161,27 @@ export default class Text extends LabelField {
                 baseFont.style = "italic"
             }
 
+            // Treat paragraphs as block-level elements: start and end on a new line.
+            // Avoid adding an extra leading newline if the paragraph starts at the field origin.
+            if(tag == PARAGRAPH_TAG) {
+                const isAtFieldOrigin = initialX == this.x && initialY == this.y
+                if(!isAtFieldOrigin) {
+                    currentX = this.x
+                    currentY = initialY + baseFont.size + this.lineSpacing
+                }
+            }
+
             elementNode.childNodes.forEach(node => {
                 const {x,y,command} = this.generateFormattedRecursive(currentX, currentY, node, baseFont, baseFeatures)
                 currentX = x
                 currentY = y
                 commands.push(command)
             })
+
+            if(tag == PARAGRAPH_TAG) {
+                currentX = this.x
+                currentY += baseFont.size + this.lineSpacing
+            }
 
             return {
                 x: currentX,
