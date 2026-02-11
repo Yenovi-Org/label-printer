@@ -10,13 +10,13 @@ function sleep(ms: number) {
 
 export default async () => {
     const displayOverPrint = true
-    const monitorPrinter = true
+    const monitorPrinter = false
     const printers = await PrinterService.getPrinters()
     
     if(!monitorPrinter && printers.length > 0) {
         const printer = printers[0]
 
-        // const label = await classicExample()
+        // const result = await classicExample()
         // const result = await tableExample()
         const result = await svgExample()
         const labels: Label[] = Array.isArray(result) ? result : [result]

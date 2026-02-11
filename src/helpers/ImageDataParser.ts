@@ -76,16 +76,17 @@ export function parsePNG(buffer: Buffer): ImageData {
   const scanlineLength = width * bytesPerPixel;
   const data = new Uint8Array(width * height * outputChannels);
 
+  // PNG filters are applied relative to the *unfiltered* previous scanline.
+  // Keep the previous unfiltered scanline buffer to decode correctly.
+  let prevUnfilteredScanline: Buffer = Buffer.alloc(scanlineLength);
+
   for (let y = 0; y < height; y++) {
     const scanlineStart = y * (scanlineLength + 1);
     const filterType = decompressedData[scanlineStart];
     const scanline = decompressedData.subarray(scanlineStart + 1, scanlineStart + 1 + scanlineLength);
 
-    const prevScanline = y > 0
-      ? decompressedData.subarray((y - 1) * (scanlineLength + 1) + 1, (y - 1) * (scanlineLength + 1) + 1 + scanlineLength)
-      : Buffer.alloc(scanlineLength);
-
-    const unfilteredScanline = applyPNGFilter(filterType, scanline, prevScanline, bytesPerPixel);
+    const unfilteredScanline = applyPNGFilter(filterType, scanline, prevUnfilteredScanline, bytesPerPixel);
+    prevUnfilteredScanline = unfilteredScanline as Buffer;
 
     for (let x = 0; x < width; x++) {
       const outIdx = (y * width + x) * outputChannels;
