@@ -1,5 +1,11 @@
 # label-printer
 
+## 0.7.7
+
+### Patch Changes
+
+- 917532a: Further improved rich editor html tag support
+
 ## 0.7.6
 
 ### Patch Changes
