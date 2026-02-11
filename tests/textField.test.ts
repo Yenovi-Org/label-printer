@@ -104,3 +104,43 @@ test("Text formatted <p> ending with <br> does not add an extra newline", async 
     // Expect exactly two y positions (one per paragraph), not three (which would imply a double newline)
     expect(new Set(ys).size).toBe(2)
 })
+
+test("Text formatted <p> ending with nested <br> does not add an extra newline", async () => {
+    const label = new Label(50, 25)
+
+    const text = new Text("<p>First<i><br/></i></p><p>Second</p>", 10, 10, true)
+    text.setFont({ name: "default", size: 20 })
+    label.add(text)
+
+    const lines = await commandStrings(label)
+    const textLines = lines.filter(l => l.startsWith("TEXT"))
+    expect(textLines.length).toBeGreaterThanOrEqual(2)
+
+    const ys = textLines.map(l => {
+        const match = l.match(/^TEXT\s+\d+,(\d+),/)
+        if(!match) throw new Error(`Unexpected TEXT command: ${l}`)
+        return Number(match[1])
+    })
+
+    expect(new Set(ys).size).toBe(2)
+})
+
+test("Text formatted consecutive <p> tags do not create empty lines", async () => {
+    const label = new Label(50, 25)
+
+    const text = new Text("<p>One</p><p>Two</p><p>Three</p>", 10, 10, true)
+    text.setFont({ name: "default", size: 20 })
+    label.add(text)
+
+    const lines = await commandStrings(label)
+    const textLines = lines.filter(l => l.startsWith("TEXT"))
+
+    const ys = textLines.map(l => {
+        const match = l.match(/^TEXT\s+\d+,(\d+),/)
+        if(!match) throw new Error(`Unexpected TEXT command: ${l}`)
+        return Number(match[1])
+    })
+
+    // No blank line between paragraphs => should use exactly 3 line y positions
+    expect(new Set(ys).size).toBe(3)
+})

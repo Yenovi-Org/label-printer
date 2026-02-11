@@ -46,6 +46,29 @@ export default class Text extends LabelField {
     private context: Context|undefined = undefined
     private readonly lineSpacing = 1
 
+    private endsWithBreak(node: Node): boolean {
+        if(node.nodeType == NodeType.TEXT_NODE) {
+            return node.innerText.trim() == ""
+        }
+
+        const elementNode = node as HTMLElement
+        if(elementNode.rawTagName == BREAK_TAG) return true
+
+        const children = elementNode.childNodes
+        for(let i = children.length - 1; i >= 0; i--) {
+            const child = children[i]
+            if(child.nodeType == NodeType.TEXT_NODE) {
+                if(child.innerText.trim() == "") continue
+                return false
+            }
+
+            if(this.endsWithBreak(child)) return true
+            return false
+        }
+
+        return false
+    }
+
     /**
      * Width of the text. 
      * If set, the text will be clipped to this size
@@ -173,8 +196,7 @@ export default class Text extends LabelField {
             // Treat paragraphs as block-level elements: start and end on a new line.
             // Avoid adding an extra leading newline if the paragraph starts at the field origin.
             if(tag == PARAGRAPH_TAG) {
-                const isAtFieldOrigin = initialX == this.x && initialY == this.y
-                if(!isAtFieldOrigin) {
+                if(initialX != this.x) {
                     currentX = this.x
                     currentY = initialY + baseFont.size + this.lineSpacing
                 }
@@ -188,22 +210,7 @@ export default class Text extends LabelField {
             })
 
             if(tag == PARAGRAPH_TAG) {
-                let paragraphEndsWithBreak = false
-                for(let i = elementNode.childNodes.length - 1; i >= 0; i--) {
-                    const node = elementNode.childNodes[i]
-                    if(node.nodeType == NodeType.TEXT_NODE) {
-                        if(node.innerText.trim() == "") continue
-                        break
-                    }
-
-                    const childElement = node as HTMLElement
-                    if(childElement.rawTagName == BREAK_TAG) {
-                        paragraphEndsWithBreak = true
-                    }
-                    break
-                }
-
-                if(!paragraphEndsWithBreak) {
+                if(!this.endsWithBreak(elementNode)) {
                     currentX = this.x
                     currentY += baseFont.size + this.lineSpacing
                 }
