@@ -115,6 +115,10 @@ export class UsbDevice {
         return this.endpoints.find(e => e.direction == "out")?.endpointNumber
     }
 
+    private get outEndpointPacketSize(): number|undefined {
+        return this.endpoints.find(e => e.direction == "out")?.packetSize
+    }
+
     /**
      * Endpoint for reading
      */
