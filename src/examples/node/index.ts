@@ -47,6 +47,8 @@ export default async () => {
         }
 
         await printer.close()
+    } else if (printers.length === 0) {
+        console.log("No printers found")
     }
 
     if (monitorPrinter) {
