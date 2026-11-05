@@ -2,7 +2,7 @@ import zplExample from "@/examples/node/exampleCases/zplExample"
 
 test("ZPL example labels generate complete ZPL", async () => {
     const labels = await zplExample()
-    expect(labels).toHaveLength(4)
+    expect(labels).toHaveLength(5)
 
     for (const label of labels) {
         const lines: string[] = []

@@ -257,3 +257,8 @@ test("ZPLPrinter parses ~HS status", async () => {
     expect(await status("030,0,1,1234,000,0,0,0,000,0,0,0", ok2)).toBe("paused")
     expect(await status("030,0,0,1234,002,0,0,0,000,0,0,0", ok2)).toBe("printing")
 })
+
+test("ZPL display is not supported", async () => {
+    const { Label } = await import("@/labels")
+    await expect(new Label(50, 30).fullDisplayCommand("zpl", "normal")).rejects.toThrow("Operation not supported")
+})

@@ -66,7 +66,7 @@ class ZPLCommandGenerator implements CommandGenerator<ZPLCommand> {
     }
 
     display(): ZPLCommand {
-        return new ZPLCommandGroup([])
+        throw new Error("Operation not supported: ZPL printers cannot display a label on their screen")
     }
 
     line(start: Point, end: Point, thickness: number): ZPLCommand {

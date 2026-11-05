@@ -2,8 +2,8 @@ import { PrinterService } from "@/printers"
 import { Label } from "@/labels"
 // import textExample from "./exampleCases/textExample";
 // import classicExample from "./exampleCases/classicExample"
-import textWrappingExample from "./exampleCases/textWrappingExample"
-// import zplExample from "./exampleCases/zplExample"
+// import textWrappingExample from "./exampleCases/textWrappingExample"
+import zplExample from "./exampleCases/zplExample"
 // import tableExample from "./exampleCases/tableExample"
 // import tableRotationExample from "./exampleCases/tableRotationExample"
 // import svgExample from "./exampleCases/imageTypesExample"
@@ -16,18 +16,18 @@ function sleep(ms: number) {
 }
 
 export default async () => {
-    const displayOverPrint = true
+    const displayOverPrint = false
     const monitorPrinter = false
-    // const printers = await PrinterService.getPrinters()
-    const printers = [await PrinterService.connectTSPL({ network: { host: "192.168.100.31", port: 9100 } })]
+    const printers = await PrinterService.getPrinters()
+    // const printers = [await PrinterService.connectTSPL({ network: { host: "192.168.100.31", port: 9100 } })]
     // ZPL printer (set displayOverPrint to false, ZPL can't display a label): 
     // const printers = [await PrinterService.connectZPL({ network: { host: "192.168.100.31", port: 9100 } })]
 
     if(!monitorPrinter && printers.length > 0 && printers[0]) {
         const printer = printers[0]!
 
-        const result = await textWrappingExample()
-        // const result = await zplExample()
+        // const result = await textWrappingExample()
+        const result = await zplExample()
         // const result = await textExample()
         // const result = await classicExample()
         // const result = await tableExample()
