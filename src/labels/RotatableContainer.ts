@@ -18,10 +18,14 @@ export default class RotatableContainer extends RotatableLabelField {
 
     /**
     * Place fields in the container
-    * @param fields 
+    * @param fields
     */
     add(...fields: LabelField[]) {
         this.fields.push(...fields)
+    }
+
+    collectCharacters(): string {
+        return this.fields.map(f => f.textContent()).join("")
     }
 
     async commandForLanguage(language: PrinterLanguage, config?: PrintConfig): Promise<Command> {

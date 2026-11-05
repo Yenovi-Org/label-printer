@@ -19,7 +19,7 @@ export default async (): Promise<labels.Label> => {
     const fontItalic = fs.readFileSync(__dirname+"/../Roboto-Italic.ttf").buffer
     const fontBoldItalic = fs.readFileSync(__dirname+"/../Roboto-BoldItalic.ttf").buffer
 
-    const label = new labels.Label(40, 40)
+    const label = new labels.Label(50, 25)
 
     await label.registerFont({name: fontName, data: fontRegular, weight: 400, style: "normal"})
     await label.registerFont({name: fontName, data: fontBold, weight: 700, style: "normal"})
@@ -29,8 +29,8 @@ export default async (): Promise<labels.Label> => {
     const text = new labels.Text(testText, textX, textY)
     const line = new labels.Line({x: textX - 5, y: textY}, {x: textX - 5 , y: textY + fontSize * 2 + 2})
     const line2 = new labels.Line({x: textX, y: textY + fontSize * 2}, {x: textX + textWidth + 5 , y: textY + fontSize * 2}, 2)
-    const imageData = await ImageUtils.getBWBitmap("https://firebasestorage.googleapis.com/v0/b/tlprinting-live.appspot.com/o/user%2F1701885792189-favicon.png?alt=media&token=4a7a5940-34d6-416c-ac46-f0c6df3a00e2", 100, 100)
-    const image = new labels.Image(qrX, qrY, imageData)
+    // const imageData = await ImageUtils.getBWBitmap("https://firebasestorage.googleapis.com/v0/b/tlprinting-live.appspot.com/o/user%2F1701885792189-favicon.png?alt=media&token=4a7a5940-34d6-416c-ac46-f0c6df3a00e2", 100, 100)
+    // const image = new labels.Image(qrX, qrY, imageData)
 
     // const qrCodeText = "https://tlprinting.net"
     // const qrcode = new QRCode(qrCodeText, qrX, qrY, textWidth / 2)
@@ -38,8 +38,7 @@ export default async (): Promise<labels.Label> => {
 
     text.setFont({name: fontName, size: fontSize})
     text.setMultiLine(textWidth)
-
-    label.add(text, line, image, line2)
+    label.add(text, line, line2) // image,
     // label.setOrientation("right")
 
     return label

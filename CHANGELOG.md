@@ -1,5 +1,24 @@
 # label-printer
 
+## 0.13.10
+
+### Patch Changes
+
+- 4a9df46: Roll back with font subset
+
+## 0.13.9
+
+### Patch Changes
+
+- fee7b36: Font subsetting browser support
+
+## 0.13.8
+
+### Patch Changes
+
+- 1455bf3: Only upload font subset
+- d96727f: test
+
 ## 0.13.7
 
 ### Patch Changes

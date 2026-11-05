@@ -108,6 +108,10 @@ export default class Text extends RotatableLabelField implements PositionedField
         this.font = font
     }
 
+    textContent(): string {
+        return this.content.replace(/<[^>]*>/g, "")
+    }
+
     /**
      * Generate the commands. Main entry point
      * @param language 

@@ -14,7 +14,7 @@ This package provides a TypeScript/JavaScript API to:
 ## Installation
 
 ```bash
-npm install label-printer
+npm install label-printer 
 ```
 
 ## Main exports
@@ -65,7 +65,7 @@ const printer = await printers.PrinterService.requestPrinter()
 if(!printer) throw new Error("No printer selected")
 ```
 
-### Print or display a label
+### Print or display a label 
 
 ```ts
 import { labels } from "label-printer"

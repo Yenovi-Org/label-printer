@@ -357,6 +357,10 @@ export default class Table extends RotatableLabelField implements PositionedFiel
         return config.textWidth(text, this.font)
     }
 
+    textContent(): string {
+        return this.rows.flat().map(c => this.toPlainText(c)).join("")
+    }
+
     private toPlainText(content: string): string {
         // Measurement helpers should ignore formatting.
         // This strips basic HTML tags used by the Text field's formatting support.
