@@ -6,7 +6,7 @@
 This package provides a TypeScript/JavaScript API to:
 
 - **Build labels** in a printer-language-independent way
-- **Generate printer commands** (currently TSPL focused)
+- **Generate printer commands** for **TSPL** and **ZPL**
 - **Find and talk to printers**
   - **Browser**: via WebUSB
   - **Node.js**: via USB and **automatic network discovery** (TCP/9100)
@@ -39,7 +39,7 @@ The library exposes three main areas:
 - Supports **automatic network discovery**:
   - First attempts Bonjour/mDNS discovery of printer-related services
   - If Bonjour yields no candidates, falls back to a conservative private-subnet scan
-  - Every discovered candidate is **verified** by sending the TSPL identify command (`~!I`)
+  - Every discovered candidate is **verified** by sending the language's identify command (`~!I` for TSPL, `~HI` for ZPL), so the printer language is detected automatically
 
 ## Printer layer
 
@@ -79,6 +79,20 @@ await printer.display(label)
 await printer.close()
 ```
 
+`display` shows the label on the printer's screen. It is only available for TSPL, ZPL printers throw an
+"Operation not supported" error.
+
+### Write the print code to a file
+
+Useful for debugging or sending the commands with an external tool (Node.js only):
+
+```ts
+import { printers } from "label-printer"
+
+await printers.PrinterService.printToFile("out/label.zpl", label, "zpl", 1, 3)
+// then for example: nc 192.168.100.31 9100 < out/label.zpl
+```
+
 ### Connect directly (bypass discovery)
 
 If you already know how to reach your printer (network address or USB identifiers), you can create a printer instance directly.
@@ -92,13 +106,16 @@ const printer = await printers.PrinterService.connect({ network: { host: "192.16
 if(!printer) throw new Error("Printer not found or not supported")
 ```
 
-Explicit TSPL (when you know it's a TSPL printer):
+Explicit language (when you know it's a TSPL or a ZPL printer). Both still probe the printer and return `undefined` if it doesn't answer:
 
 ```ts
 import { printers } from "label-printer"
 
 const printer = await printers.PrinterService.connectTSPL({ network: { host: "192.168.100.31", port: 9100 } })
 if(!printer) throw new Error("Not a TSPL printer")
+
+const zebra = await printers.PrinterService.connectZPL({ network: { host: "192.168.100.31", port: 9100 } })
+if(!zebra) throw new Error("Not a ZPL printer")
 ```
 
 USB (Node.js - filter without a prompt):
@@ -144,6 +161,17 @@ const label = new labels.Label(50, 25)
 ## Supported languages
 
 - [TSPL](documentations/TSPL.pdf)
+- [ZPL](documentations/ZPL.pdf) (Zebra). Tested on a ZT411 over USB.
+
+The same label produces the printer code for both languages. Language-specific notes:
+
+- **Gap, gap offset**: ZPL printers measure the gap during calibration. Only "gap" (`gap > 0`) or "continuous" (`gap = 0`) media is set. `gapOffset` is ignored.
+- **Density**: TSPL density `0-15` is mapped to the ZPL darkness `~SD00-30`.
+- **Copies**: `sets * copiesPerSet` labels are printed.
+- **Fonts**: text without a registered font uses the printer's scalable font `0`. Registered fonts are uploaded to the printer's RAM (`R:`), so they have to be uploaded again after a power cycle.
+- **Text encoding**: field data is sent as UTF-8 (`^CI28`) and reserved characters (`^`, `~`, `_`) are escaped.
+- **Barcodes**: the supported symbologies are `128`, `EAN128` (GS1-128, application identifiers in parentheses), `EAN13`, `EAN8`, `UPCA`, `UPCE`, `39`, `39C`, `93`, `25`, `25C`, `ITF14`, `CODA`, `MSI`, `MSIC`, `PLESSEY` and `11`. Other types print as Code 128. For EAN/UPC the printer calculates the check digit, so data that is too long is cut. Add-on digits (`+2`, `+5`) are not supported. The human readable line is either on or off, its alignment cannot be set.
+- **QR codes**: rotated codes are placed correctly, but the symbol itself is not rotated (`^BQ` has no rotation). The version is picked by the printer, so the code can be larger than the requested width when the content has lower case letters.
 
 ## Fields
 
@@ -214,7 +242,7 @@ This is only needed when the automatic loading fails — in standard Node.js env
 
 ### BarCode
 
-Draw a barcode (TSPL-backed). Values are in **dots**.
+Draw a barcode. Values are in **dots**.
 
 ```ts
 import { labels } from "label-printer"
@@ -300,6 +328,11 @@ print/display command sequences.
   - String union of possible status values returned by `printer.getStatus()`.
   - Access via `printers.PrinterStatus`.
 
+## Examples
+
+`src/examples/node` contains example labels that can be printed with `pnpm examples` (set the printer in `src/examples/node/index.ts`).
+`zplExample` is a hardware test set for ZPL printers: text, lines, all barcode types, rotations, QR codes and images on 70 x 30 mm labels. Each label has a comment that describes what the printed result should look like.
+
 ## Notes
 
 ### Useful units
@@ -356,12 +389,17 @@ await label.registerFont({
 Font notes:
 
 - If a font is not working, make sure the extension is **TTF**.
+- Text sizes are in **dots**. ZPL printers print the size rounded to a whole point (1 pt = 1/72 inch).
 - If you want bold text, register a `weight: 700` variant.
 - When using formatted text (`<b>...</b>`), the library will request `weight: 700`.
 
 # Update package
 
+Releases are made with [changesets](https://github.com/changesets/changesets) and published to npm by the
+[Release workflow](.github/workflows/release.yml), which runs on every push to `main`.
+
 - Make changes on feature branch.
-- Run `pnpm changeset` on feature branch to create change.
+- Run `pnpm changeset` on feature branch to create change. Choose the bump (patch/minor/major) and describe the change. Commit the generated file from `.changeset/`.
 - Merge feature branch into main.
-- Changeset will create a PR, merge it to trigger publish
+- The workflow collects the changesets in a "Version Packages" PR (version bump and `CHANGELOG.md`). Merge it to trigger the publish (`pnpm release`: install, build, `changeset publish`).
+- Tests run on pull requests with the [Test workflow](.github/workflows/test.yml) (`pnpm test`).
