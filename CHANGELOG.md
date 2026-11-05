@@ -1,5 +1,11 @@
 # label-printer
 
+## 0.14.0
+
+### Minor Changes
+
+- 98cdeca: Add ZPL support
+
 ## 0.13.10
 
 ### Patch Changes
