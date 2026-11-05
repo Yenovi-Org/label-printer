@@ -32,13 +32,15 @@ export class PrinterService {
     static async printerForDevice(device: Device): Promise<Printer|undefined> {
         const classes = [TSPLPrinter, ZPLPrinter]
 
-        for (const key in classes) {
+        for (const printerClass of classes) {
             try {
-                if(await classes[key].try(device)) {
-                    return new classes[key](device)
+                if(await printerClass.try(device)) {
+                    return new printerClass(device)
                 }
             } catch (_e) {
-                return undefined
+                // A failed probe (for example no answer to the TSPL identify command on a ZPL printer)
+                // must not stop the other languages from being tried
+                try { await device.close() } catch (_e2) {}
             }
         }
 
