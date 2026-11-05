@@ -1,6 +1,6 @@
 import { Rotation } from "@/commands";
 import ZPLVisualCommand from "../ZPLVisualCommand";
-import { encodeFieldData, rotatedOrigin, rotationToZPL } from "../../ZPLUtils";
+import { rotationToZPL, textField } from "../../ZPLUtils";
 
 // The scalable font accepts 10 to 32000 dots
 const MIN_SIZE = 10
@@ -25,9 +25,8 @@ export default class ZPLTextCommand extends ZPLVisualCommand {
     }
 
     get commandString(): string {
-        const rot = ZPLTextCommand.rotationToZPL(this.rotation)
-        const o = rotatedOrigin(this.x, this.y, this.rotation, this.width ?? 0, this.size)
-        return `^FO${o.x},${o.y}^A0${rot},${this.size},${this.size}^FH^FD${encodeFieldData(this.content)}^FS`
+        const font = `^A0${ZPLTextCommand.rotationToZPL(this.rotation)},${this.size},${this.size}`
+        return textField(this.x, this.y, this.rotation, this.size, this.width, font, this.content)
     }
 
     static rotationToZPL(rotation: Rotation): string {

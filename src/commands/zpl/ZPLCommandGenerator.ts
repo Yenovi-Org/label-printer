@@ -17,7 +17,7 @@ import {
 } from "./commands";
 import { Alignment, BarcodeHumanReable, BarcodeType, GraphicMode, LabelDirection } from "../tspl";
 import { Rotation } from "@/commands";
-import { pointsToDots } from "@/helpers/UnitUtils";
+import { dotToPoint, pointsToDots } from "@/helpers/UnitUtils";
 import { QRLengthMapping } from "@/helpers/QRCodeUtils";
 
 class ZPLCommandGenerator implements CommandGenerator<ZPLCommand> {
@@ -29,6 +29,14 @@ class ZPLCommandGenerator implements CommandGenerator<ZPLCommand> {
 
     get textWidthCorrectionFactor(): number | undefined {
         return undefined
+    }
+
+    /**
+     * The label gives the text size in whole points and the text is printed with the size converted back to dots,
+     * so layout has to use that size too
+     */
+    normalizeFontSizeInDots(sizeInDots: number, _fontName: string, dpi: number): number {
+        return pointsToDots(Math.max(1, dotToPoint(sizeInDots, dpi)), dpi)
     }
 
     commandGroup(commands: ZPLCommand[]): ZPLCommandGroup {

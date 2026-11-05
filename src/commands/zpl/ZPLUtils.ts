@@ -56,3 +56,20 @@ export function rotatedOrigin(x: number, y: number, rotation: Rotation, length: 
     }
     return { x: Math.max(0, Math.round(ox)), y: Math.max(0, Math.round(oy)) }
 }
+
+/**
+ * Builds a one line text field. `font` is the font command (^A0.. or ^A@..).
+ *
+ * Text rotated by 180° or 270° has to be anchored at its end, which needs its width. Estimated widths are never exact,
+ * so the text goes into a left justified one line field block (^FB) that is wider than the text. The text starts at
+ * the start of the block, so a wrong estimate doesn't move it. The extra height keeps it from wrapping.
+ */
+export function textField(x: number, y: number, rotation: Rotation, size: number, width: number | undefined, font: string, content: string): string {
+    if ((rotation === 180 || rotation === 270) && width !== undefined) {
+        const length = Math.min(9999, Math.max(1, Math.ceil(width + size)))
+        const o = rotatedOrigin(x, y, rotation, length, size)
+        return `^FO${o.x},${o.y}${font}^FB${length},1,0,L^FH^FD${encodeFieldData(content, true)}^FS`
+    }
+    const o = rotatedOrigin(x, y, rotation, 0, size)
+    return `^FO${o.x},${o.y}${font}^FH^FD${encodeFieldData(content)}^FS`
+}

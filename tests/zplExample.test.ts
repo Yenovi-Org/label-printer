@@ -13,7 +13,7 @@ test("ZPL example labels generate complete ZPL", async () => {
         expect(output).toContain("^XA^CI28")
         expect(output.trimEnd().endsWith("^PQ1^XZ")).toBe(true)
         // Every field is closed (graphic fields too)
-        const fields = (output.match(/\^FO/g) ?? []).length
+        const fields = (output.match(/\^F[OT]\d/g) ?? []).length
         expect(fields).toBeGreaterThan(5)
         expect((output.match(/\^FS/g) ?? []).length).toBe(fields)
         expect(output).not.toContain("NaN")

@@ -1,6 +1,6 @@
 import { Rotation } from "@/commands";
 import ZPLVisualCommand from "../ZPLVisualCommand";
-import { encodeFieldData, rotatedOrigin, rotationToZPL } from "../../ZPLUtils";
+import { rotationToZPL, textField } from "../../ZPLUtils";
 
 export default class ZPLCustomFontTextCommand extends ZPLVisualCommand {
     private readonly content: string
@@ -24,8 +24,7 @@ export default class ZPLCustomFontTextCommand extends ZPLVisualCommand {
     }
 
     get commandString(): string {
-        const rot = rotationToZPL(this.rotation)
-        const o = rotatedOrigin(this.x, this.y, this.rotation, this.width ?? 0, this.size)
-        return `^FO${o.x},${o.y}^A@${rot},${this.size},${this.size},R:${this.fontFile}^FH^FD${encodeFieldData(this.content)}^FS`
+        const font = `^A@${rotationToZPL(this.rotation)},${this.size},${this.size},R:${this.fontFile}`
+        return textField(this.x, this.y, this.rotation, this.size, this.width, font, this.content)
     }
 }

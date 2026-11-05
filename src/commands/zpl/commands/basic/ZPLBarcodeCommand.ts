@@ -83,11 +83,18 @@ export default class ZPLBarcodeCommand extends ZPLVisualCommand {
             ? this.content.substring(0, symbology.dataLength)
             : this.content
 
+        const ratio = (symbology.ratio ?? 2).toFixed(1)
+        const body = `^BY${this.barWidth},${ratio},${this.height}${symbology.format(rot, this.height, hr)}^FH^FD${encodeFieldData(data)}^FS`
+
+        // ^FO is the upper-left corner of the rotated box, so it needs the length of the code. That is only known for
+        // fixed width symbologies, and 0° and 90° don't need it. ^FT is fixed to the content (start of the bars) whatever
+        // the rotation, so it is used for 180° and 270°. It sits at the bottom of the bars in the direction of the code
+        if (this.rotation === 180) return `^FT${Math.max(0, Math.round(this.x))},${Math.max(0, Math.round(this.y - this.height))}${body}`
+        if (this.rotation === 270) return `^FT${Math.max(0, Math.round(this.x + this.height))},${Math.max(0, Math.round(this.y))}${body}`
+
         const length = (symbology.modules ?? 0) * this.barWidth
         const thickness = this.height + (this.humanReadable ? INTERPRETATION_DOTS_PER_MODULE * this.barWidth : 0)
         const o = rotatedOrigin(this.x, this.y, this.rotation, length, thickness)
-
-        const ratio = (symbology.ratio ?? 2).toFixed(1)
-        return `^FO${o.x},${o.y}^BY${this.barWidth},${ratio},${this.height}${symbology.format(rot, this.height, hr)}^FH^FD${encodeFieldData(data)}^FS`
+        return `^FO${o.x},${o.y}${body}`
     }
 }

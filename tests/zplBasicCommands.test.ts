@@ -93,8 +93,13 @@ test("ZPLTextCommand escapes reserved and non ASCII characters", () => {
 test("ZPLTextCommand anchors rotated text at its rotation point", () => {
     // size 20, width 100: 90° box is 20 wide to the left of the anchor
     expect(new ZPLTextCommand("x", 50, 60, 20, 90, 100).commandString).toContain("^FO30,60")
-    expect(new ZPLTextCommand("x", 150, 60, 20, 180, 100).commandString).toContain("^FO50,40")
-    expect(new ZPLTextCommand("x", 50, 160, 20, 270, 100).commandString).toContain("^FO50,60")
+})
+
+test("ZPLTextCommand puts 180 and 270 text in a left justified block so the start doesn't depend on the width", () => {
+    // block length = width + size = 120
+    expect(new ZPLTextCommand("x", 150, 60, 20, 180, 100).commandString).toBe("^FO30,40^A0I,20,20^FB120,1,0,L^FH^FDx^FS")
+    expect(new ZPLTextCommand("x", 50, 160, 20, 270, 100).commandString).toBe("^FO50,40^A0B,20,20^FB120,1,0,L^FH^FDx^FS")
+    expect(new ZPLCustomFontTextCommand("a\\b", 150, 60, "f0.TTF", 20, 180, 100).commandString).toContain("^FB120,1,0,L^FH^FDa\\\\b^FS")
 })
 
 test("ZPLCustomFontTextCommand uses ^A@ with font file reference", () => {
@@ -183,10 +188,18 @@ test("ZPLBarcodeCommand cuts check digits and escapes data", () => {
     expect(new ZPLBarcodeCommand("A^B", 0, 0, "128", 50, 0, "none", 2).commandString).toContain("^FH^FDA_5EB^FS")
 })
 
-test("ZPLBarcodeCommand anchors rotated fixed width codes", () => {
+test("ZPLBarcodeCommand anchors codes rotated by 90 with ^FO", () => {
     // EAN13 at module 2 is 190 dots long, 50 dots high
     expect(new ZPLBarcodeCommand("123456789012", 100, 300, "EAN13", 50, 90, "none", 2).commandString).toContain("^FO50,300")
-    expect(new ZPLBarcodeCommand("123456789012", 300, 100, "EAN13", 50, 180, "none", 2).commandString).toContain("^FO110,50")
+})
+
+test("ZPLBarcodeCommand rounds ^FT coordinates", () => {
+    expect(new ZPLBarcodeCommand("A", 300.4, 100.6, "128", 40, 180, "none", 2).commandString).toMatch(/^\^FT300,61\^BY/)
+})
+
+test("ZPLBarcodeCommand uses ^FT for 180 and 270 so the code starts at the anchor whatever its length", () => {
+    expect(new ZPLBarcodeCommand("ANY", 300, 100, "128", 40, 180, "none", 2).commandString).toMatch(/^\^FT300,60\^BY2,2\.0,40\^BCI,40,N,N,N/)
+    expect(new ZPLBarcodeCommand("ANY", 300, 100, "128", 40, 270, "none", 2).commandString).toMatch(/^\^FT340,100\^BY2,2\.0,40\^BCB,40,N,N,N/)
 })
 
 // ── QR Code ────────────────────────────────────────────────────────────────
