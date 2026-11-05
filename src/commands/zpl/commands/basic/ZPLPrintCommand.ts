@@ -1,16 +1,18 @@
 import ZPLCommand from "../../ZPLCommand";
 
+/**
+ * Print quantity and end of the label format. TSPL prints `sets` x `copies` labels, ZPL takes the total
+ * ^PQq^XZ
+ */
 export default class ZPLPrintCommand extends ZPLCommand {
-    private readonly sets: number
-    private readonly copiesPerSet: number
+    private readonly total: number
 
     constructor(sets: number, copiesPerSet: number) {
         super()
-        this.sets = sets
-        this.copiesPerSet = copiesPerSet
+        this.total = Math.max(1, Math.round(sets) * Math.max(1, Math.round(copiesPerSet)))
     }
 
     get commandString(): string {
-        return `^PQ${this.sets},0,${this.copiesPerSet},Y^XZ`
+        return `^PQ${this.total}^XZ`
     }
 }

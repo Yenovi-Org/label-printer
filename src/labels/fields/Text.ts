@@ -552,7 +552,7 @@ export default class Text extends RotatableLabelField implements PositionedField
         const finalY = Math.round(y)
 
         let commands: Command[] = []
-        const textCommand = this.context!.generator.text(text, finalX, finalY, finalFont, finalFontSize, this.rotation)
+        const textCommand = this.context!.generator.text(text, finalX, finalY, finalFont, finalFontSize, this.rotation, this.textWidthFunction(text, font))
 
         if(features.length == 0) {
             return textCommand

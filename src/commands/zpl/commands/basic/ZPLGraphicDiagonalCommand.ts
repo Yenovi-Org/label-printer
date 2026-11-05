@@ -14,11 +14,11 @@ export default class ZPLGraphicDiagonalCommand extends ZPLVisualCommand {
 
         this.boxWidth = Math.round(Math.abs(end.x - start.x))
         this.boxHeight = Math.round(Math.abs(end.y - start.y))
-        this.thickness = Math.round(thickness)
+        this.thickness = Math.max(1, Math.round(thickness))
 
-        // R = top-left to bottom-right, L = bottom-left to top-right
+        // ZPL: L leans like \ (top-left to bottom-right), R leans like / (bottom-left to top-right)
         const goesRightDown = (start.x <= end.x && start.y <= end.y) || (start.x >= end.x && start.y >= end.y)
-        this.orientation = goesRightDown ? "R" : "L"
+        this.orientation = goesRightDown ? "L" : "R"
     }
 
     get commandString(): string {

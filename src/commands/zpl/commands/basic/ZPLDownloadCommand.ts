@@ -1,5 +1,10 @@
 import ZPLCommand from "../../ZPLCommand";
 
+/**
+ * Downloads a TrueType font into the printer's RAM (R:).
+ * ~DYd:name,b,x,t,w,data  with b=B (binary), x=T (TrueType), t=size, w=(empty, only used for graphics)
+ * The font data is sent as raw bytes.
+ */
 export default class ZPLDownloadCommand extends ZPLCommand {
     private readonly name: string
     private readonly data: ArrayBuffer | Uint8Array
@@ -10,17 +15,33 @@ export default class ZPLDownloadCommand extends ZPLCommand {
         this.data = data
     }
 
-    get commandString(): string {
-        const bytes = this.data instanceof Uint8Array ? this.data : new Uint8Array(this.data)
-        const hex = ZPLDownloadCommand.toHex(bytes)
-        return `~DYR:${this.name},B,T,${bytes.length},${hex}`
+    private get bytes(): Uint8Array {
+        return this.data instanceof Uint8Array ? this.data : new Uint8Array(this.data)
     }
 
-    private static toHex(bytes: Uint8Array): string {
-        let hex = ""
-        for (let i = 0; i < bytes.length; i++) {
-            hex += bytes[i].toString(16).padStart(2, "0").toUpperCase()
-        }
-        return hex
+    /** File name without the extension, as ~DY expects the extension as a separate parameter */
+    private get baseName(): string {
+        return this.name.replace(/\.[^.]*$/, "")
+    }
+
+    get commandString(): string {
+        return `~DYR:${this.baseName},B,T,${this.bytes.length},,`
+    }
+
+    get commandBytes(): Uint8Array {
+        const header = new TextEncoder().encode(this.commandString)
+        const data = this.bytes
+        const terminator = this.commandTerminatorBytes
+        const result = new Uint8Array(header.length + data.length + terminator.length)
+        result.set(header, 0)
+        result.set(data, header.length)
+        result.set(terminator, header.length + data.length)
+        return result
+    }
+
+    async writeTo(device: import("@/helpers/Device").default): Promise<void> {
+        await this.writeString(this.commandString, device)
+        await this.writeBytes(this.data, device)
+        await this.terminateCommand(device)
     }
 }

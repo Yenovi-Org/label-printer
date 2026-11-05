@@ -6,7 +6,7 @@ import ZPLCommand from "../../ZPLCommand";
 export default class ZPLSetupCommand extends ZPLCommand {
     private readonly widthDots: number
     private readonly heightDots: number
-    private readonly offsetDots: number
+    private readonly continuous: boolean
     private readonly direction: LabelDirection
     private readonly mirror: boolean
     private readonly darkness: number
@@ -14,6 +14,7 @@ export default class ZPLSetupCommand extends ZPLCommand {
     constructor(
         width: number,
         height: number,
+        gap: number,
         offset: number,
         direction: LabelDirection,
         mirror: boolean,
@@ -24,25 +25,26 @@ export default class ZPLSetupCommand extends ZPLCommand {
         super()
         this.widthDots = ZPLSetupCommand.toDots(width, dpi, unitSystem)
         this.heightDots = ZPLSetupCommand.toDots(height, dpi, unitSystem)
-        this.offsetDots = ZPLSetupCommand.toDots(offset, dpi, unitSystem)
+        // A gap of 0 means continuous media, as in TSPL. Printers measure the gap size during calibration
+        this.continuous = gap <= 0
         this.direction = direction
         this.mirror = mirror
-        // Map TSPL density (0–15) → ZPL ^MD (-30 to 30)
-        this.darkness = Math.round((density / 15) * 30 - 15)
+        // Map TSPL density (0–15) → ZPL ~SD (0 to 30), absolute darkness
+        this.darkness = Math.min(30, Math.max(0, Math.round(density * 2)))
     }
 
     get commandString(): string {
-        const orientation = (this.direction === "normal" && !this.mirror) ? "N" : "I"
+        // ^CI28: field data is UTF-8
         const parts = [
+            `~SD${String(this.darkness).padStart(2, "0")}`,
             `^XA`,
+            `^CI28`,
             `^PW${Math.round(this.widthDots)}`,
             `^LL${Math.round(this.heightDots)}`,
-            `^MD${this.darkness}`,
-            `^PO${orientation}`,
+            `^MN${this.continuous ? "N" : "Y"}`,
+            `^PO${this.direction === "inverse" ? "I" : "N"}`,
         ]
-        if (this.offsetDots > 0) {
-            parts.push(`^LT${Math.round(this.offsetDots)}`)
-        }
+        if (this.mirror) parts.push(`^PMY`)
         return parts.join("")
     }
 

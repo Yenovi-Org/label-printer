@@ -13,7 +13,7 @@ export default interface CommandGenerator<T extends Command> {
     get textWidthCorrectionFactor(): number|undefined
     commandGroup: (commands: T[]) => CommandGroup<T>
     print: (sets: number, copiesPerSet: number) => T
-    text: (content: string, x: number, y: number, font: string|"default", size: number, rotation?: Rotation) => T
+    text: (content: string, x: number, y: number, font: string|"default", size: number, rotation?: Rotation, width?: number) => T
     upload: (name: string, data: ArrayBuffer|Uint8Array) => T
     line: (start: Point, end: Point, thickness: number) => T
     image: (image: BitmapLike, x: number, y: number, mode?: GraphicMode) => T

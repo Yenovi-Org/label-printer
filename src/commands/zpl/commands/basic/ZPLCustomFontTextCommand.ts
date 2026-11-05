@@ -1,24 +1,31 @@
 import { Rotation } from "@/commands";
 import ZPLVisualCommand from "../ZPLVisualCommand";
-import ZPLTextCommand from "./ZPLTextCommand";
+import { encodeFieldData, rotatedOrigin, rotationToZPL } from "../../ZPLUtils";
 
 export default class ZPLCustomFontTextCommand extends ZPLVisualCommand {
     private readonly content: string
     private readonly fontFile: string
     private readonly size: number
     private readonly rotation: Rotation
+    private readonly width?: number
 
-    constructor(content: string, x: number, y: number, fontFile: string, size: number, rotation: Rotation = 0) {
+    /**
+     * @param fontFile Alias of a font uploaded with ZPLDownloadCommand, like "f0.TTF"
+     * @param size Height of the text in dots
+     * @param width Width of the text in dots. Needed to anchor 180° and 270° rotated text
+     */
+    constructor(content: string, x: number, y: number, fontFile: string, size: number, rotation: Rotation = 0, width?: number) {
         super(x, y)
         this.content = content
-        // fontFile is the alias like "f0.TTF"; strip path, keep as device reference
         this.fontFile = fontFile
-        this.size = Math.round(size)
+        this.size = Math.max(10, Math.round(size))
         this.rotation = rotation
+        this.width = width
     }
 
     get commandString(): string {
-        const rot = ZPLTextCommand.rotationToZPL(this.rotation)
-        return `^FO${this.x},${this.y}^A@${rot},${this.size},${this.size},R:${this.fontFile}^FD${this.content}^FS`
+        const rot = rotationToZPL(this.rotation)
+        const o = rotatedOrigin(this.x, this.y, this.rotation, this.width ?? 0, this.size)
+        return `^FO${o.x},${o.y}^A@${rot},${this.size},${this.size},R:${this.fontFile}^FH^FD${encodeFieldData(this.content)}^FS`
     }
 }

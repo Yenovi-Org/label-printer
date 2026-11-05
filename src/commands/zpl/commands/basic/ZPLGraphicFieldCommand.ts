@@ -13,7 +13,7 @@ export default class ZPLGraphicFieldCommand extends ZPLVisualCommand {
         const rowBytes = this.bitmap.width
         const total = rowBytes * this.bitmap.height
         const hexData = ZPLGraphicFieldCommand.toInvertedHex(this.bitmap.bytes)
-        return `^FO${this.x},${this.y}^GFA,${total},${total},${rowBytes},${hexData}`
+        return `^FO${this.x},${this.y}^GFA,${total},${total},${rowBytes},${hexData}^FS`
     }
 
     /**

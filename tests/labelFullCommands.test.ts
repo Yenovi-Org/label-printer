@@ -65,8 +65,8 @@ describe("Label full commands", () => {
         expect(fullOutput).toContain("^PW")
         expect(fullOutput).toContain("^LL")
         expect(fullOutput).toContain("^XZ")
-        expect(printed.some((s) => s.startsWith("~DYR:f0.TTF"))).toBe(true)
-        expect(printed.some((s) => s.includes("^PQ1,0,2,Y"))).toBe(true)
+        expect(printed.some((s) => s.startsWith("~DYR:f0,B,T"))).toBe(true)
+        expect(printed.some((s) => s.includes("^PQ2^XZ"))).toBe(true)
     })
 
     test("ZPL fullPrintCommand converts mm to dots using label DPI", async () => {

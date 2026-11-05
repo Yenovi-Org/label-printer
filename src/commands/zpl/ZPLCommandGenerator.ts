@@ -17,6 +17,7 @@ import {
 } from "./commands";
 import { Alignment, BarcodeHumanReable, BarcodeType, GraphicMode, LabelDirection } from "../tspl";
 import { Rotation } from "@/commands";
+import { pointsToDots } from "@/helpers/UnitUtils";
 import { QRLengthMapping } from "@/helpers/QRCodeUtils";
 
 class ZPLCommandGenerator implements CommandGenerator<ZPLCommand> {
@@ -38,11 +39,13 @@ class ZPLCommandGenerator implements CommandGenerator<ZPLCommand> {
         return new ZPLPrintCommand(sets, copiesPerSet)
     }
 
-    text(content: string, x: number, y: number, font: string | "default", size: number, rotation?: Rotation): ZPLCommand {
+    text(content: string, x: number, y: number, font: string | "default", size: number, rotation?: Rotation, width?: number): ZPLCommand {
+        // The label gives the size in points, ZPL works in dots
+        const sizeInDots = pointsToDots(size, this.dpi)
         if (font === "default") {
-            return new ZPLTextCommand(content, x, y, size, rotation ?? 0)
+            return new ZPLTextCommand(content, x, y, sizeInDots, rotation ?? 0, width)
         }
-        return new ZPLCustomFontTextCommand(content, x, y, font, size, rotation ?? 0)
+        return new ZPLCustomFontTextCommand(content, x, y, font, sizeInDots, rotation ?? 0, width)
     }
 
     upload(name: string, data: ArrayBuffer | Uint8Array): ZPLCommand {
@@ -59,7 +62,7 @@ class ZPLCommandGenerator implements CommandGenerator<ZPLCommand> {
         unitSystem: UnitSystem,
         density: number
     ): ZPLCommand {
-        return new ZPLSetupCommand(width, height, offset, direction, mirror, unitSystem, density, this.dpi)
+        return new ZPLSetupCommand(width, height, gap, offset, direction, mirror, unitSystem, density, this.dpi)
     }
 
     display(): ZPLCommand {
@@ -87,7 +90,7 @@ class ZPLCommandGenerator implements CommandGenerator<ZPLCommand> {
     qrCode(content: string, width: number, x: number, y: number, rotation?: Rotation): ZPLCommand {
         const cellCount = this.cellCount(content)
         const magnification = Math.max(1, Math.min(10, Math.round(width / cellCount)))
-        return new ZPLQRCommand(content, x, y, magnification, rotation ?? 0)
+        return new ZPLQRCommand(content, x, y, magnification, rotation ?? 0, cellCount * magnification)
     }
 
     barCode(

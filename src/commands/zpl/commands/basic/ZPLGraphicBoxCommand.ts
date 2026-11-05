@@ -7,9 +7,10 @@ export default class ZPLGraphicBoxCommand extends ZPLVisualCommand {
 
     constructor(x: number, y: number, width: number, height: number, thickness: number) {
         super(x, y)
-        this.width = Math.round(width)
-        this.height = Math.round(height)
-        this.thickness = Math.round(thickness)
+        this.thickness = Math.max(1, Math.round(thickness))
+        // ^GB needs width and height of at least the thickness
+        this.width = Math.max(this.thickness, Math.round(width))
+        this.height = Math.max(this.thickness, Math.round(height))
     }
 
     get commandString(): string {
