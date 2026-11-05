@@ -2,7 +2,11 @@ import Device from "@/helpers/Device"
 import { getDevices, requestDevice, requestDeviceWithFilters } from "@/helpers/USBUtils"
 import NetworkDevice from "@/helpers/NetworkDevice"
 import TSPLPrinter from "./TSPLPrinter"
+import ZPLPrinter from "./ZPLPrinter"
 import Printer from "./Printer"
+import { PrinterLanguage } from "@/commands"
+import { LabelDirection } from "@/commands/tspl"
+import { Label } from "@/labels"
 
 export type PrinterServiceUsbConnectOptions = {
     vendorId?: number
@@ -26,15 +30,17 @@ export class PrinterService {
      * @returns 
      */
     static async printerForDevice(device: Device): Promise<Printer|undefined> {
-        const classes = [TSPLPrinter]
+        const classes = [TSPLPrinter, ZPLPrinter]
 
-        for (const key in classes) {
+        for (const printerClass of classes) {
             try {
-                if(await classes[key].try(device)) {
-                    return new classes[key](device)
+                if(await printerClass.try(device)) {
+                    return new printerClass(device)
                 }
             } catch (_e) {
-                return undefined
+                // A failed probe (for example no answer to the TSPL identify command on a ZPL printer)
+                // must not stop the other languages from being tried
+                try { await device.close() } catch (_e2) {}
             }
         }
 
@@ -51,7 +57,7 @@ export class PrinterService {
      * class' `try(device)` method.
      */
     private static async discoverDevices(): Promise<Device[]> {
-        const classes = [TSPLPrinter]
+        const classes = [TSPLPrinter, ZPLPrinter]
 
         const discoveryResults = await Promise.all(classes.map(async (cls) => {
             const discoverer = (cls as any).discoverDevices
@@ -127,6 +133,45 @@ export class PrinterService {
         const ok = await TSPLPrinter.try(device)
         if(!ok) return undefined
         return new TSPLPrinter(device)
+    }
+
+    /**
+     * Create a ZPL printer instance using explicit connection information.
+     *
+     * This still verifies the target by probing it with the ZPL identify command (`~HI`).
+     * If the probe fails, `undefined` is returned.
+     */
+    static async connectZPL(options: PrinterServiceConnectOptions): Promise<ZPLPrinter|undefined> {
+        const device = await PrinterService.deviceForConnectOptions(options)
+        if(!device) return undefined
+
+        const ok = await ZPLPrinter.try(device)
+        if(!ok) return undefined
+        return new ZPLPrinter(device)
+    }
+
+    /**
+     * Generate the print code for a label and write it to a file.
+     * Useful for debugging or sending commands via an external tool.
+     *
+     * Note: This is a Node.js-only operation.
+     */
+    static async printToFile(
+        filePath: string,
+        label: Label,
+        language: PrinterLanguage,
+        sets: number,
+        gap: number,
+        copiesPerSet: number = 1,
+        direction: LabelDirection = "normal",
+        mirror: boolean = false,
+        gapOffset: number = 0
+    ): Promise<void> {
+        const command = await label.fullPrintCommand(language, gap, direction, sets, copiesPerSet, mirror, gapOffset)
+        const fs = await import("fs/promises")
+        const path = await import("path")
+        await fs.mkdir(path.dirname(filePath), { recursive: true })
+        await fs.writeFile(filePath, command.commandBytes)
     }
 
     /**

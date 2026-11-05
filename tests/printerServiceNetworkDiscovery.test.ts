@@ -10,6 +10,17 @@ jest.mock("@/helpers/USBUtils", () => {
     }
 })
 
+jest.mock("@/printers/ZPLPrinter", () => {
+    return {
+        __esModule: true,
+        default: class ZPLPrinterMock {
+            static try = jest.fn().mockResolvedValue(false)
+            static discoverDevices = jest.fn().mockResolvedValue([])
+            constructor(_device: any) {}
+        }
+    }
+})
+
 jest.mock("@/printers/TSPLPrinter", () => {
     return {
         __esModule: true,

@@ -1,4 +1,4 @@
-import { Command, PrinterLanguage, tspl } from "@/commands";
+import { Command, PrinterLanguage, tspl, zpl } from "@/commands";
 import CommandGenerator from "@/commands/CommandGenerator";
 import { Printer } from "@/printers";
 import { FontOption } from "./types";
@@ -37,6 +37,7 @@ export default abstract class Printable {
     protected commandGeneratorFor(language: PrinterLanguage): CommandGenerator<any> {
         switch(language) {
             case "tspl": return tspl.commandGenerator
+            case "zpl":  return zpl.commandGenerator
         }
     }
 }

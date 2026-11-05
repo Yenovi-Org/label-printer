@@ -1,5 +1,6 @@
 import { PrinterService } from "@/printers"
 import TSPLPrinter from "@/printers/TSPLPrinter"
+import ZPLPrinter from "@/printers/ZPLPrinter"
 
 jest.mock("@/helpers/USBUtils", () => {
     const actual = jest.requireActual("@/helpers/USBUtils")
@@ -21,6 +22,7 @@ test("getPrinters skips devices that throw during probing", async () => {
     ])
 
     jest.spyOn(TSPLPrinter as any, "discoverDevices").mockResolvedValue([])
+    jest.spyOn(ZPLPrinter as any, "discoverDevices").mockResolvedValue([])
 
     jest.spyOn(TSPLPrinter, "try").mockImplementation(async (device: any) => {
         if(device.deviceId == "bad") {
@@ -34,4 +36,5 @@ test("getPrinters skips devices that throw during probing", async () => {
 
     ;(TSPLPrinter.try as unknown as jest.Mock).mockRestore?.()
     ;((TSPLPrinter as any).discoverDevices as unknown as jest.Mock).mockRestore?.()
+    ;((ZPLPrinter as any).discoverDevices as unknown as jest.Mock).mockRestore?.()
 })

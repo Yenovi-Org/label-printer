@@ -1,5 +1,7 @@
 import StringUtils from "./StringUtils";
 
+/** How long to wait for an answer from a USB device */
+const READ_TIMEOUT_MS = 2000
 const unsupportedUsbError = "usb-unsupported"
 const stringHelper = new StringUtils()
 
@@ -178,7 +180,19 @@ export class UsbDevice {
         if(endpointNumber == null) {
             throw new Error("usb-no-in-endpoint")
         }
-        const result = await this.device.transferIn(endpointNumber, length)
+        // A printer that doesn't know the command never answers, so the transfer would wait forever.
+        // The node usb package can time out a transfer cleanly (a pending one would block closing the device).
+        // WebUSB in the browser has no such option
+        const nodeEndpoint = (this.device as any).getEndpoint?.(endpointNumber | 0x80)
+        if(nodeEndpoint) nodeEndpoint.timeout = READ_TIMEOUT_MS
+
+        let result: USBInTransferResult
+        try {
+            result = await this.device.transferIn(endpointNumber, length)
+        } catch (error) {
+            if(/TIMED_OUT/.test(String(error))) return undefined
+            throw error
+        }
 
         if(result.status == "ok" && result.data) {
             return result.data

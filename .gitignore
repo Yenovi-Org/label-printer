@@ -11,3 +11,5 @@ node_modules
 
 **/.DS_Store
 .DS_Store
+# Generated ZPL test labels
+/zpl-out/

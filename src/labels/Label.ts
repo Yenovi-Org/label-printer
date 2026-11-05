@@ -1,4 +1,4 @@
-import { Command, Dimension, PrinterLanguage } from "@/commands";
+import { Command, Dimension, PrinterLanguage, zpl } from "@/commands";
 import Printable, { PrintConfig } from "./Printable";
 import { UnitSystem } from "@/commands";
 import LabelField from "./fields/superClasses/LabelField";
@@ -93,6 +93,13 @@ export default class Label extends Printable {
 
     async commandForLanguage(language: PrinterLanguage, config?: PrintConfig): Promise<Command> {
         return await this.container.commandForLanguage(language, config)
+    }
+
+    protected override commandGeneratorFor(language: PrinterLanguage): CommandGenerator<any> {
+        if (language === "zpl") {
+            return new zpl.ZPLCommandGenerator(this.dpi)
+        }
+        return super.commandGeneratorFor(language)
     }
 
     /**
