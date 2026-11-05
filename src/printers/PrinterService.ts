@@ -134,6 +134,21 @@ export class PrinterService {
     }
 
     /**
+     * Create a ZPL printer instance using explicit connection information.
+     *
+     * This still verifies the target by probing it with the ZPL identify command (`~HI`).
+     * If the probe fails, `undefined` is returned.
+     */
+    static async connectZPL(options: PrinterServiceConnectOptions): Promise<ZPLPrinter|undefined> {
+        const device = await PrinterService.deviceForConnectOptions(options)
+        if(!device) return undefined
+
+        const ok = await ZPLPrinter.try(device)
+        if(!ok) return undefined
+        return new ZPLPrinter(device)
+    }
+
+    /**
      * Generate the print code for a label and write it to a file.
      * Useful for debugging or sending commands via an external tool.
      *

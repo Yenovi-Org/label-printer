@@ -14,7 +14,7 @@ import { LabelOrientation } from "@/labels/types"
  *  3. QR and images   – QR sizes, image at all rotations
  *  4. Label 1 again, printed with the whole label rotated (container rotation)
  *
- * Run `PrinterService.printToFile` first to inspect the generated ZPL (see index.ts), then print with a printer.
+ * Use it from examples/node/index.ts with PrinterService.connectZPL and displayOverPrint = false.
  */
 
 const ROTATIONS: Rotation[] = [0, 90, 180, 270]
